@@ -24,6 +24,7 @@ library
                      , bytestring
                      , yaml
                      , containers
+                     , unordered-containers
   default-language:    Haskell2010
 
 executable collector-exe
