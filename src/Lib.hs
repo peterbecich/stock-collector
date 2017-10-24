@@ -34,11 +34,8 @@ import Types.AlphaMetaData
 import Types.Tick
 import Types.TimeSeriesResponse
 
-    
-
-
 --decodedMinute :: IO (Maybe (Map LocalTime Tick'))
-decodedMinute :: IO (Maybe (Map LocalTime Tick'))
+decodedMinute :: IO (Maybe (Map LocalTime Tick))
 decodedMinute = do
   file <- LS.readFile "sample/one_minute.json" :: IO LS.ByteString
   maybeWholeOb <- pure $ decode file :: IO (Maybe Object)
@@ -59,7 +56,7 @@ retrieveTimeSeriesResponse url = do
     timeSeriesVal :: Value
     timeSeriesVal = body ! "Time Series (1min)"
     (Object timeSeriesOb) = timeSeriesVal
-    timeSeriesResult :: Result (Map LocalTime Tick')
+    timeSeriesResult :: Result (Map LocalTime Tick)
     timeSeriesResult = parse ticksParser' body
   case (metaDataResult, timeSeriesResult) of -- error-prone
     (Success metaData, Success ticks) ->
@@ -67,7 +64,6 @@ retrieveTimeSeriesResponse url = do
     (Success metaData, _) ->
       return $ TimeSeriesResponse metaData empty
     (_, _) -> undefined
-
 
 example = do
   msft <- exampleRequest

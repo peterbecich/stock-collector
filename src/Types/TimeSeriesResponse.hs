@@ -12,9 +12,9 @@ import Data.Map (Map, empty)
 import Data.Time.LocalTime
 
 import Types.AlphaMetaData
-import Types.Tick (Tick')
+import Types.Tick (Tick)
 
 data TimeSeriesResponse =
   TimeSeriesResponse { metaData :: AlphaMetaData
-                     , ticks :: Map LocalTime Tick'
+                     , ticks :: Map LocalTime Tick
                      } deriving (Generic, Show)

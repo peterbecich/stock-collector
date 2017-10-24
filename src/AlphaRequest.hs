@@ -4,6 +4,7 @@
 
 module AlphaRequest where
 
+import Prelude hiding (lookup)
 
 import GHC.Generics
 import Data.Aeson
@@ -12,6 +13,8 @@ import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Time.Clock
 
 import Network.HTTP.Simple (Request, parseRequest)
+
+import Data.Yaml.Config
 
 -- https://www.alphavantage.co/documentation/#intraday
 
@@ -52,4 +55,17 @@ formatRequest symbol (Interval mins) outputSize (APIKey apiKey) = do
 -- msft15 :: Request
 -- msft15 = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&outputsize=full&apikey="
 
-exampleRequest = formatRequest "MSFT" (intervals !! 0) Compact (APIKey "")
+-- https://hackage.haskell.org/package/yaml-config-0.4.0/docs/Data-Yaml-Config.html
+getKey :: IO APIKey
+getKey = do
+  let
+    path :: FilePath
+    path = "conf/collector.yaml"
+  config <- load path
+  keys <- subconfig "keys" config
+  alphaKey <- lookup "alphaVantage" keys
+  return $ APIKey alphaKey
+
+exampleRequest = do
+  key <- getKey
+  formatRequest "MSFT" (intervals !! 0) Compact key
