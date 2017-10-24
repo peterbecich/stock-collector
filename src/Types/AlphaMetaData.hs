@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Collector.Types.AlphaMetaData where
+module Types.AlphaMetaData where
 
 import GHC.Generics
 

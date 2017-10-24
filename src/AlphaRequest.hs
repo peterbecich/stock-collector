@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Collector.AlphaRequest where
+module AlphaRequest where
 
 
 import GHC.Generics

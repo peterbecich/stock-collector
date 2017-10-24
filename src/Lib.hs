@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Collector where
+module Lib where
 
 import GHC.Generics
 import Data.Aeson
@@ -28,11 +28,11 @@ import qualified Data.ByteString.Lazy as LS
 
 import Network.HTTP.Simple
 
-import Collector.AlphaRequest
+import AlphaRequest
 
-import Collector.Types.AlphaMetaData
-import Collector.Types.Tick
-import Collector.Types.TimeSeriesResponse
+import Types.AlphaMetaData
+import Types.Tick
+import Types.TimeSeriesResponse
 
     
 

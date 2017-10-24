@@ -14,8 +14,12 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 library
-  hs-source-dirs:      src
+  hs-source-dirs:      src/
   exposed-modules:     Lib
+                     , AlphaRequest
+                     , Types.AlphaMetaData
+                     , Types.Tick
+                     , Types.TimeSeriesResponse
   build-depends:       base >= 4.7 && < 5
                      , wreq
                      , aeson
