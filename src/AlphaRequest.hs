@@ -51,10 +51,6 @@ formatRequest symbol (Interval mins) outputSize (APIKey apiKey) = do
         ++symbol++"&interval="++mins++"&outputsize="++(show outputSize)++"&apikey="++apiKey
   parseRequest requestString
 
-
--- msft15 :: Request
--- msft15 = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&outputsize=full&apikey="
-
 -- https://hackage.haskell.org/package/yaml-config-0.4.0/docs/Data-Yaml-Config.html
 getKey :: IO APIKey
 getKey = do
@@ -66,6 +62,7 @@ getKey = do
   alphaKey <- lookup "alphaVantage" keys
   return $ APIKey alphaKey
 
+exampleRequest :: IO Request
 exampleRequest = do
   key <- getKey
   formatRequest "MSFT" (intervals !! 0) Compact key

@@ -18,8 +18,6 @@ import Data.HashMap.Lazy ((!))
 import Control.Monad
 import Data.Functor
 
-import qualified Data.Yaml as Yaml
-
 import qualified Data.ByteString.Char8 as S8
 import qualified Data.ByteString as BS
 
@@ -57,7 +55,7 @@ retrieveTimeSeriesResponse url = do
     timeSeriesVal = body ! "Time Series (1min)"
     (Object timeSeriesOb) = timeSeriesVal
     timeSeriesResult :: Result (Map LocalTime Tick)
-    timeSeriesResult = parse ticksParser' body
+    timeSeriesResult = parse ticksParser body
   case (metaDataResult, timeSeriesResult) of -- error-prone
     (Success metaData, Success ticks) ->
       return $ TimeSeriesResponse metaData ticks
