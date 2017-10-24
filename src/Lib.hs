@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Lib where
+module Collector where
 
 import GHC.Generics
 import Data.Aeson
@@ -28,69 +28,15 @@ import qualified Data.ByteString.Lazy as LS
 
 import Network.HTTP.Simple
 
+
+import Collector.Types.AlphaMetaData
+import Collector.Types.Tick
+import Collector.Types.TimeSeriesResponse
+
 msft15 :: Request
 msft15 = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey="
-
-data AlphaMetaData = AlphaMetaData { info :: String
-                                   , symbol :: String
-                                   , lastRefresh :: LocalTime
-                                   , interval :: String
-                                   , outputSize :: String
-                                   } deriving (Generic, Show)
-
-instance FromJSON AlphaMetaData where
-  parseJSON = withObject "Meta Data" $ \amd -> AlphaMetaData
-    <$> amd .: "1. Information"
-    <*> amd .: "2. Symbol"
-    <*> amd .: "3. Last Refreshed"
-    <*> amd .: "4. Interval"
-    <*> amd .: "5. Output Size"
-
-data Tick = Tick { open :: String
-                 , high :: String
-                 , low :: String
-                 , close :: String
-                 , volume :: String
-                 } deriving (Generic, Show)
-
-
-data Tick' = Tick' { open' :: Double
-                 , high' :: Double
-                 , low' :: Double
-                 , close' :: Double
-                 , volume' :: Int
-                 } deriving (Generic, Show)
-
-
-instance FromJSON Tick where
-  parseJSON = withObject "Tick" $ \tick -> do
-    open <- tick .: "1. open"
-    high <- tick .: "2. high"
-    low <- tick .: "3. low"
-    close <- tick .: "4. close"
-    volume <- tick .: "5. volume"
-    return $ Tick open high low close volume
-
-instance FromJSON Tick' where  -- unsafe !!!
-  parseJSON = withObject "Tick" $ \tick -> do
-    open <- read <$> tick .: "1. open"
-    high <- read <$> tick .: "2. high"
-    low <- read <$> tick .: "3. low"
-    close <- read <$> tick .: "4. close"
-    volume <- read <$> tick .: "5. volume"
-    return $ Tick' open high low close volume
     
 
-data TimeSeriesResponse =
-  TimeSeriesResponse { metaData :: AlphaMetaData
-                     , ticks :: Map LocalTime Tick'
-                     } deriving (Generic, Show)
-
-ticksParser :: Object -> Parser (Map LocalTime Tick)
-ticksParser wholeObject = wholeObject .: "Time Series (1min)"
-
-ticksParser' :: Object -> Parser (Map LocalTime Tick')
-ticksParser' wholeObject = wholeObject .: "Time Series (1min)"
 
 --decodedMinute :: IO (Maybe (Map LocalTime Tick'))
 decodedMinute :: IO (Maybe (Map LocalTime Tick'))
