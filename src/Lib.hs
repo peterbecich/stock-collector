@@ -6,7 +6,7 @@ module Lib where
 
 import GHC.Generics
 import Data.Aeson
-import Data.Aeson.Types (Parser, parse)
+import Data.Aeson.Types (Parser, parse, parseMaybe)
 
 import Data.Time.Clock
 import Data.Time.LocalTime
@@ -28,7 +28,8 @@ import qualified Data.ByteString.Lazy as LS
 
 import Network.HTTP.Simple
 
-msft15 = "GET https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey="
+msft15 :: Request
+msft15 = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey="
 
 data AlphaMetaData = AlphaMetaData { info :: String
                                    , symbol :: String
@@ -60,114 +61,64 @@ data Tick' = Tick' { open' :: Double
                  , volume' :: Int
                  } deriving (Generic, Show)
 
+
 instance FromJSON Tick where
-  parseJSON = withObject "Tick" $ \tick ->
-    Tick
-    <$> tick .: "1. open"
-    <*> tick .: "2. high"
-    <*> tick .: "3. low"
-    <*> tick .: "4. close"
-    <*> tick .: "5. volume"
+  parseJSON = withObject "Tick" $ \tick -> do
+    open <- tick .: "1. open"
+    high <- tick .: "2. high"
+    low <- tick .: "3. low"
+    close <- tick .: "4. close"
+    volume <- tick .: "5. volume"
+    return $ Tick open high low close volume
+
+instance FromJSON Tick' where  -- unsafe !!!
+  parseJSON = withObject "Tick" $ \tick -> do
+    open <- read <$> tick .: "1. open"
+    high <- read <$> tick .: "2. high"
+    low <- read <$> tick .: "3. low"
+    close <- read <$> tick .: "4. close"
+    volume <- read <$> tick .: "5. volume"
+    return $ Tick' open high low close volume
+    
 
 data TimeSeriesResponse =
-  TimeSeriesResponse { --metaData :: Map String AlphaMetaData
-                     --,
-  ticks :: Map String (Map UTCTime Tick)
+  TimeSeriesResponse { metaData :: AlphaMetaData
+                     , ticks :: Map LocalTime Tick'
                      } deriving (Generic, Show)
 
-httpExample :: IO ()
-httpExample = do
-    response <- httpJSON "POST http://httpbin.org/post"
+ticksParser :: Object -> Parser (Map LocalTime Tick)
+ticksParser wholeObject = wholeObject .: "Time Series (1min)"
 
-    putStrLn $ "The status code was: " ++
-               show (getResponseStatusCode response)
-    print $ getResponseHeader "Content-Type" response
-    S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
+ticksParser' :: Object -> Parser (Map LocalTime Tick')
+ticksParser' wholeObject = wholeObject .: "Time Series (1min)"
 
-decodedMetaData :: IO (Maybe (Map String AlphaMetaData))
-decodedMetaData = do
-  metaDataFile <- LS.readFile "sample/metadata.json"
-  _ <- putStrLn $ L8.unpack metaDataFile
-  _ <- putStrLn "---------------"
-  return $ decode metaDataFile
-
-decodedMetaData2 :: IO (Maybe AlphaMetaData)
-decodedMetaData2 = do
-  metaDataFile <- LS.readFile "sample/metadata2.json"
-  _ <- putStrLn $ L8.unpack metaDataFile
-  _ <- putStrLn "---------------"
-  return $ decode metaDataFile
-
--- https://hackage.haskell.org/package/yaml-0.8.23.3/docs/Data-Yaml.html
-decodedTicks :: IO (Maybe (Map String (Map LocalTime Tick)))
-decodedTicks = do
-  ticksFile <- LS.readFile "sample/ticks.json"
-  _ <- putStrLn $ L8.unpack ticksFile
-  _ <- putStrLn "-----------------"
-  return $ decode ticksFile
-
-decodedTicks2 :: IO (Maybe (Map String Tick))
-decodedTicks2 = do
-  ticksFile <- LS.readFile "sample/ticks2.json"
-  _ <- putStrLn $ L8.unpack ticksFile
-  _ <- putStrLn "-----------------"
-  return $ decode ticksFile
-
--- https://artyom.me/aeson
-decodedTick :: IO (Maybe (Map LocalTime Tick))
-decodedTick = do
-  tickFile <- LS.readFile "sample/tick.json"
-  _ <- putStrLn $ L8.unpack tickFile
-  _ <- putStrLn "-------------------"
-  return $ decode tickFile
-
-decodedTick2 :: IO (Maybe Tick)
-decodedTick2 = do
-  tickFile <- LS.readFile "sample/tick2.json"
-  _ <- putStrLn $ L8.unpack tickFile
-  _ <- putStrLn "-------------------"
-  return $ decode tickFile
-
-ticksParser :: Object -> Parser (Maybe (Map LocalTime Tick))
-ticksParser wholeObject = wholeObject .:? "Time Series (1min)"
-
---instance FromJSON (Maybe (Map LocalTime Tick)) where
-instance FromJSON TimeSeriesResponse where
-  -- parseJSON :: Object -> Parser (Maybe (Map LocalTime Tick))
-  parseJSON (Object object) = undefined
-    -- fmap (\myb -> fmap TimeSeriesResponse myb) (ticksParser object)
-
+--decodedMinute :: IO (Maybe (Map LocalTime Tick'))
+decodedMinute :: IO (Maybe (Map LocalTime Tick'))
 decodedMinute = do
   file <- LS.readFile "sample/one_minute.json" :: IO LS.ByteString
-  -- maybeWholeOb :: Maybe Object
   maybeWholeOb <- pure $ decode file :: IO (Maybe Object)
-  let nested = maybeWholeOb >>= (\wholeOb -> Just $ parse ticksParser wholeOb)
-      nested' = nested >>= (\result -> case result of
-                 (Error _) -> Nothing
-                 (Success x) -> (Just x)
-             )
-  return $ join nested'
+  return $ do
+    wholeOb <- maybeWholeOb
+    ticks <- parseMaybe (\ob -> ob .: "Time Series (1min)") wholeOb
+    ticks
 
-someFunc :: IO (Map LocalTime (Tick))
-someFunc = do
-  responseValue <- httpJSON msft15 :: IO (Response Value)
+retrieveTimeSeriesResponse :: Request -> IO TimeSeriesResponse
+retrieveTimeSeriesResponse url = do
+  responseValue <- httpJSON url :: IO (Response Value)
   let
-    body :: Object -- possible runtime error if match fails
+    -- possible runtime error if match fails
     (Object body) = getResponseBody responseValue
+    metaDataVal :: Value
+    metaDataVal = body ! "Meta Data"
+    metaDataResult = fromJSON metaDataVal :: Result AlphaMetaData
     timeSeriesVal :: Value
     timeSeriesVal = body ! "Time Series (1min)"
-    resultTimeSeries :: Result (Map LocalTime Tick)
-    resultTimeSeries = fromJSON timeSeriesVal
-  case resultTimeSeries of
-    (Error _) -> return empty
-    (Success mp) -> return mp
-  
-  
-
-  -- maybeWholeOb <- pure $ decode body :: IO (Maybe Object)
-  -- let nested = maybeWholeOb >>= (\wholeOb -> Just $ parse ticksParser wholeOb)
-  --     nested' = nested >>= (\result -> case result of
-  --                (Error _) -> Nothing
-  --                (Success x) -> (Just x)
-  --            )
-  -- return $ join nested'
+    (Object timeSeriesOb) = timeSeriesVal
+    timeSeriesResult :: Result (Map LocalTime Tick')
+    timeSeriesResult = parse ticksParser' body
+  case (metaDataResult, timeSeriesResult) of -- error-prone
+    (Success metaData, Success ticks) ->
+      return $ TimeSeriesResponse metaData ticks
+    (Success metaData, _) ->
+      return $ TimeSeriesResponse metaData empty
+    (_, _) -> undefined
