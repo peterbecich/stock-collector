@@ -11,7 +11,7 @@ import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Time.Clock
 import Data.Time.LocalTime
 
-import Data.Map (Map, empty)
+import Data.Map (Map, empty, size)
 
 import Data.HashMap.Lazy ((!))
 
@@ -28,13 +28,12 @@ import qualified Data.ByteString.Lazy as LS
 
 import Network.HTTP.Simple
 
+import Collector.AlphaRequest
 
 import Collector.Types.AlphaMetaData
 import Collector.Types.Tick
 import Collector.Types.TimeSeriesResponse
 
-msft15 :: Request
-msft15 = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey="
     
 
 
@@ -68,3 +67,11 @@ retrieveTimeSeriesResponse url = do
     (Success metaData, _) ->
       return $ TimeSeriesResponse metaData empty
     (_, _) -> undefined
+
+
+example = do
+  msft <- exampleRequest
+  timeSeriesResponse <- retrieveTimeSeriesResponse msft
+  let tks = ticks timeSeriesResponse
+      numTicks = size tks
+  putStrLn $ "number of ticks: " ++ (show numTicks)
