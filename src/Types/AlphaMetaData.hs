@@ -6,7 +6,7 @@ module Types.AlphaMetaData where
 import GHC.Generics
 
 import Data.Aeson
-import Data.Aeson.Types (Parser, parse, parseMaybe)
+import Data.Aeson.Types (Parser, parse, parseMaybe, Value)
 
 import Data.Time.LocalTime
 
@@ -15,6 +15,7 @@ data AlphaMetaData = AlphaMetaData { info :: String
                                    , lastRefresh :: LocalTime
                                    , interval :: String
                                    , outputSize :: String
+                                   , timeZone :: TimeZone
                                    } deriving (Generic, Show)
 
 instance FromJSON AlphaMetaData where
@@ -24,3 +25,14 @@ instance FromJSON AlphaMetaData where
     <*> amd .: "3. Last Refreshed"
     <*> amd .: "4. Interval"
     <*> amd .: "5. Output Size"
+    <*> amd .: "6. Time Zone"
+
+-- TODO make dependent on date, DST
+instance FromJSON TimeZone where
+  parseJSON (String timeString)
+    | timeString == "US/Eastern" =
+      pure $ TimeZone 240 False "US/Eastern"
+    | otherwise =
+      pure $ TimeZone 0 False "UTC"  -- TODO
+
+
