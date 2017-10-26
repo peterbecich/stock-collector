@@ -65,9 +65,15 @@ getKey = do
 exampleRequest :: IO Request
 exampleRequest = do
   key <- getKey
-  formatRequest "MSFT" (intervals !! 0) Full key
+  formatRequest "MSFT" (intervals !! 0) Compact key
 
 badRequest :: IO Request
 badRequest = do
   key <- getKey
   formatRequest "ASHUDSADUNTAHUD" (intervals !! 0) Compact key
+
+
+exampleRequestSteel :: IO Request
+exampleRequestSteel = do
+  key <- getKey
+  formatRequest "X" (intervals !! 0) Full key

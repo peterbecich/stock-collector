@@ -85,6 +85,8 @@ example = do
   putStrLn $ "number of ticks: " ++ (show numTicks)
   -- putStrLn $ show timeSeriesResponse
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
+  -- mapM_ (\(k, v) -> insertTick k v) (toList (ticks timeSeriesResponse))
+  insertTicks timeSeriesResponse
 
 
 failedExample = do
@@ -96,3 +98,14 @@ failedExample = do
   -- putStrLn $ "number of ticks: " ++ (show numTicks)
   putStrLn $ show timeSeriesResponse
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
+
+
+exampleSteel = do
+  msft <- exampleRequestSteel
+  timeSeriesResponse <- retrieveTimeSeriesResponse msft
+  let tks = ticks timeSeriesResponse
+      numTicks = size tks
+  putStrLn $ "number of ticks: " ++ (show numTicks)
+  -- putStrLn $ show timeSeriesResponse
+  mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
+

@@ -8,7 +8,7 @@ import GHC.Generics
 import Data.Aeson
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 
-import qualified Data.Map as Mp (Map, empty)
+import qualified Data.Map as Mp (Map, empty, toList)
 import Data.Time.LocalTime
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -26,39 +26,60 @@ import qualified System.Logger as Logger
 
 import qualified Data.Text.Lazy as Text (pack)
 
-
--- data TimeSeriesResponse =
---   TimeSeriesResponse { metaData :: AlphaMetaData
---                      , ticks :: Mp.Map LocalTime Tick
---                      } deriving (Generic, Show)
-
 data TimeSeriesResponse =
   TimeSeriesResponse { metaData :: AlphaMetaData
                      , ticks :: Mp.Map ZonedTime Tick
                      } deriving (Generic, Show)
 
 
-clientInsertTick :: UTCTime -> Tick -> Client.Client ()
-clientInsertTick timestamp tick = let
+clientInsertTick :: ZonedTime -> Tick -> Client.Client ()
+clientInsertTick zonedTime tick = let
+  utc :: UTCTime
+  utc = zonedTimeToUTC zonedTime
+  epochSeconds :: Integer
+  epochSeconds = floor (utcTimeToPOSIXSeconds utc)
   p = QueryParams One False () Nothing Nothing Nothing
-  s' = show (open tick)++","++show (high tick)++","++show (low tick)++","++show (close tick)++","++show (volume tick)
+  s' :: String
+  s' = show (open tick)++","++show (high tick)++","
+    ++show (low tick)++","++show (close tick)
+    ++","++show (volume tick)
   s'' :: QueryString W () ()
   s'' = QueryString $ Text.pack
     $ "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values ("
-    ++ undefined
-    ++ show (open tick) ++ "," ++ show (high tick) ++ ","
-    ++ show (low tick) ++ "," ++ show (close tick) ++ ","
+    ++ show (epochSeconds) ++ ","
+    ++ show (open tick) ++ ","
+    ++ show (high tick) ++ ","
+    ++ show (low tick) ++ ","
+    ++ show (close tick) ++ ","
     ++ show (volume tick) ++ ")"
-  -- s :: QueryString W () ()
-  -- s = "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values (12345,1.0,1.0,1.0,1.0,100)"      
   w = Client.write s'' p
   in w
 
--- clientInsertTicks :: TimeSeriesResponse -> Client.Client ()
--- clientInsertTicks tsr 
+clientInsertTicks :: TimeSeriesResponse -> Client.Client ()
+clientInsertTicks tsr = do
+  let
+    tickList ::[(ZonedTime, Tick)]
+    tickList = Mp.toList (ticks tsr)
+    clients :: [Client.Client ()]
+    clients = fmap (\(zonedTime, tick) -> clientInsertTick zonedTime tick) tickList
+  mergedClients <- sequence_ clients
+  return mergedClients
 
+insertTick :: ZonedTime -> Tick -> IO ()
+insertTick zonedTime tick = do
+  g <- Logger.new Logger.defSettings :: IO Logger.Logger
+  c <- Client.init g Client.defSettings
+  let w = clientInsertTick zonedTime tick
+  Client.runClient c w
+  putStrLn "done"
+  Client.shutdown c
 
-now = do
-  utcNow <- getCurrentTime
-  putStrLn $ show utcNow
+insertTicks :: TimeSeriesResponse -> IO ()
+insertTicks tsr = do
+  g <- Logger.new Logger.defSettings :: IO Logger.Logger
+  c <- Client.init g Client.defSettings
+  let w = clientInsertTicks tsr
+  Client.runClient c w
+  putStrLn "done"
+  Client.shutdown c
   

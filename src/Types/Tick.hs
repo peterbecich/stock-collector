@@ -55,32 +55,32 @@ ticksParser :: Object -> Parser (Mp.Map LocalTime Tick)
 ticksParser wholeObject = wholeObject .: "Time Series (1min)"
 
 
-clientInsertTick :: Tick -> Client.Client ()
-clientInsertTick tick = let
-  p = QueryParams One False () Nothing Nothing Nothing
-  s' = show (open tick)++","++show (high tick)++","++show (low tick)++","++show (close tick)++","++show (volume tick)
-  s'' :: QueryString W () ()
-  s'' = QueryString $ Text.pack $ "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values (12345,"
-    ++show (open tick)++","++show (high tick)++","
-    ++show (low tick)++","++show (close tick)++","
-    ++show (volume tick)++")"
-  -- s :: QueryString W () ()
-  -- s = "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values (12345,1.0,1.0,1.0,1.0,100)"      
-  w = Client.write s'' p
-  in w
+-- clientInsertTick :: Tick -> Client.Client ()
+-- clientInsertTick tick = let
+--   p = QueryParams One False () Nothing Nothing Nothing
+--   s' = show (open tick)++","++show (high tick)++","++show (low tick)++","++show (close tick)++","++show (volume tick)
+--   s'' :: QueryString W () ()
+--   s'' = QueryString $ Text.pack $ "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values (12345,"
+--     ++show (open tick)++","++show (high tick)++","
+--     ++show (low tick)++","++show (close tick)++","
+--     ++show (volume tick)++")"
+--   -- s :: QueryString W () ()
+--   -- s = "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values (12345,1.0,1.0,1.0,1.0,100)"      
+--   w = Client.write s'' p
+--   in w
   
 
 -- https://hackage.haskell.org/package/cql-io-0.16.0/docs/Database-CQL-IO.html#g:4
 --storeTick :: Tick -> 
 
-tickInsertExample :: Tick -> IO ()
-tickInsertExample tick = do
-  g <- Logger.new Logger.defSettings :: IO Logger.Logger
-  c <- Client.init g Client.defSettings
-  let w = clientInsertTick tick
-  Client.runClient c w
-  putStrLn "done"
-  Client.shutdown c
+-- tickInsertExample :: Tick -> IO ()
+-- tickInsertExample tick = do
+--   g <- Logger.new Logger.defSettings :: IO Logger.Logger
+--   c <- Client.init g Client.defSettings
+--   let w = clientInsertTick tick
+--   Client.runClient c w
+--   putStrLn "done"
+--   Client.shutdown c
 
 
 
