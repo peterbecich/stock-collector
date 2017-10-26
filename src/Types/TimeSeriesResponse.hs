@@ -15,6 +15,7 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 import Types.AlphaMetaData
 import Types.Tick
+import Cass (clientCreateStockTable)
 
 import Data.Text (Text)
 import Data.Functor.Identity
@@ -31,9 +32,8 @@ data TimeSeriesResponse =
                      , ticks :: Mp.Map ZonedTime Tick
                      } deriving (Generic, Show)
 
-
-clientInsertTick :: ZonedTime -> Tick -> Client.Client ()
-clientInsertTick zonedTime tick = let
+clientInsertTick :: String -> ZonedTime -> Tick -> Client.Client ()
+clientInsertTick tickerSymbol zonedTime tick = let
   utc :: UTCTime
   utc = zonedTimeToUTC zonedTime
   epochSeconds :: Integer
@@ -45,7 +45,9 @@ clientInsertTick zonedTime tick = let
     ++","++show (volume tick)
   s'' :: QueryString W () ()
   s'' = QueryString $ Text.pack
-    $ "INSERT INTO stockmarket.msft (timestamp, open, high, low, close, volume) values ("
+    $ "INSERT INTO stockmarket."
+    ++ tickerSymbol
+    ++ " (timestamp, open, high, low, close, volume) values ("
     ++ show (epochSeconds) ++ ","
     ++ show (open tick) ++ ","
     ++ show (high tick) ++ ","
@@ -58,18 +60,22 @@ clientInsertTick zonedTime tick = let
 clientInsertTicks :: TimeSeriesResponse -> Client.Client ()
 clientInsertTicks tsr = do
   let
+    tickerSymbol = symbol (metaData tsr)
     tickList ::[(ZonedTime, Tick)]
     tickList = Mp.toList (ticks tsr)
     clients :: [Client.Client ()]
-    clients = fmap (\(zonedTime, tick) -> clientInsertTick zonedTime tick) tickList
+    clients = fmap (
+      \(zonedTime, tick) ->
+        clientInsertTick tickerSymbol zonedTime tick
+      ) tickList
   mergedClients <- sequence_ clients
   return mergedClients
 
-insertTick :: ZonedTime -> Tick -> IO ()
-insertTick zonedTime tick = do
+insertTick :: String -> ZonedTime -> Tick -> IO ()
+insertTick tickerSymbol zonedTime tick = do
   g <- Logger.new Logger.defSettings :: IO Logger.Logger
   c <- Client.init g Client.defSettings
-  let w = clientInsertTick zonedTime tick
+  let w = clientInsertTick tickerSymbol zonedTime tick
   Client.runClient c w
   putStrLn "done"
   Client.shutdown c
@@ -78,7 +84,13 @@ insertTicks :: TimeSeriesResponse -> IO ()
 insertTicks tsr = do
   g <- Logger.new Logger.defSettings :: IO Logger.Logger
   c <- Client.init g Client.defSettings
-  let w = clientInsertTicks tsr
+  let
+      tickerSymbol = symbol (metaData tsr)
+      makeTable = clientCreateStockTable tickerSymbol
+  Client.runClient c makeTable
+  putStrLn "made table"
+  let
+      w = clientInsertTicks tsr
   Client.runClient c w
   putStrLn "done"
   Client.shutdown c

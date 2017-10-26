@@ -60,7 +60,7 @@ retrieveTimeSeriesResponse url = do
     (Success metaData) = metaDataResult  -- TODO unsafe unpack!
     timeSeriesVal :: Value
     timeSeriesVal = body ! "Time Series (1min)"
-    (Object timeSeriesOb) = timeSeriesVal
+    (Object timeSeriesOb) = timeSeriesVal-- TODO also unsafe
     zonedTime' :: LocalTime -> ZonedTime
     zonedTime' localTime = ZonedTime localTime (timeZone metaData)
     timeSeriesResult :: Result (Map ZonedTime Tick)
@@ -71,7 +71,6 @@ retrieveTimeSeriesResponse url = do
     (Success metaData, _) ->
       return $ TimeSeriesResponse metaData empty
     (_, _) -> undefined
-
 
 -- TODO come back here!  not safe yet
 safeRetrieve :: Request -> IO (Maybe TimeSeriesResponse)
@@ -88,7 +87,6 @@ example = do
   -- mapM_ (\(k, v) -> insertTick k v) (toList (ticks timeSeriesResponse))
   insertTicks timeSeriesResponse
 
-
 failedExample = do
   bogus <- badRequest -- fails with runtime error
   -- json key doesn't exist
@@ -99,7 +97,6 @@ failedExample = do
   putStrLn $ show timeSeriesResponse
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
 
-
 exampleSteel = do
   msft <- exampleRequestSteel
   timeSeriesResponse <- retrieveTimeSeriesResponse msft
@@ -109,3 +106,19 @@ exampleSteel = do
   -- putStrLn $ show timeSeriesResponse
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
 
+
+tickers = ["GOOG", "MSFT", "AAPL", "FB"]
+
+insertTicker :: String -> IO ()
+insertTicker tickerSymbol = do
+  key <- getKey
+  request <- formatRequest tickerSymbol (intervals !! 0) Full key
+  timeSeriesResponse <- retrieveTimeSeriesResponse request
+  let tks = ticks timeSeriesResponse
+      numTicks = size tks
+  putStrLn $ "number of ticks: " ++ (show numTicks)
+  insertTicks timeSeriesResponse
+
+
+getTickers :: IO ()
+getTickers = mapM_ insertTicker tickers
