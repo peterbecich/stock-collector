@@ -13,3 +13,10 @@ before_install:
 
 script:
   - stack build
+
+addons:
+  apt:
+    sources:
+    - hvr-ghc
+    packages:
+    - ghc
