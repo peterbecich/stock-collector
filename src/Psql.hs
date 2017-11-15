@@ -16,6 +16,10 @@ import           Opaleye (Column, Table(Table),
 -- https://www.stackage.org/haddock/lts-9.10/opaleye-0.5.4.0/Opaleye-Manipulation.html#v:runInsertMany
 import Opaleye.Manipulation
 
+import Control.Monad
+
+import Data.Monoid
+
 import Data.Int (Int64)
 import           Data.Profunctor.Product (p6)
 import           Data.Profunctor.Product.Default (def)
@@ -28,10 +32,14 @@ import Data.Time.LocalTime
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Internal (Connection)
 
+import Data.Char
 import Data.Map (Map, empty, size, mapKeys, toList, assocs)
 
 import qualified Data.Yaml.Config as Config
 
+-- https://stackoverflow.com/a/22548591/1007926
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 
 import Types.Tick
 
@@ -47,6 +55,16 @@ table tickerSymbol = T.Table tickerSymbol (p6 ( required "time"
                                             , required "close"
                                             , required "volume" ))
 
+getTickerSymbols :: String -> IO [String]
+getTickerSymbols filename = do
+  lsTickersText <- fmap Text.lines (Text.readFile filename)
+  let lsTickers = Text.unpack <$> lsTickersText
+      lsTickersLower = (fmap . fmap) toLower $ lsTickers
+  pure lsTickersLower
+
+-- to avoid collisions with Postgres reserved words
+encodeTickerSymbol :: String -> String
+encodeTickerSymbol = undefined
 
 insertTicks :: String -> Map ZonedTime Tick -> Connection -> IO Int64
 insertTicks tickerSymbol ticks connection = let

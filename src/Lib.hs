@@ -4,6 +4,9 @@
 
 module Lib where
 
+import Control.Concurrent (threadDelay, forkIO)
+import System.Random
+
 import GHC.Generics
 import Data.Aeson
 import Data.Aeson.Types (Parser, parse, parseMaybe)
@@ -11,7 +14,8 @@ import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Time.Clock
 import Data.Time.LocalTime
 
-import Data.Map (Map, empty, size, mapKeys, toList, elems)
+import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
+import qualified Data.Map.Lazy as Map ((!)) 
 
 import Data.HashMap.Lazy ((!))
 
@@ -140,3 +144,24 @@ insertTickerPostgres tickerSymbol = do
   rowsInserted <- insertTicks tickerSymbol tks postgresConnection
   putStrLn $ "number of rows inserted: " ++ (show rowsInserted)
 
+
+getTickersPostgres :: IO ()
+getTickersPostgres = do
+  tickerSymbols <- getTickerSymbols "conf/fortune500tickers.txt"
+  -- tickerSymbols <- getTickerSymbols "conf/tenTickers.txt"
+  putStrLn $ show tickerSymbols
+  delays <- foldM (\map tickerSymbol -> do
+                      delay <- randomRIO (1, 600)
+                      let
+                        udelay :: Int
+                        udelay = delay * 1000000
+                      return $ insert tickerSymbol udelay map
+                  ) empty tickerSymbols
+  putStrLn $ show $ assocs delays
+  
+  mapM_ (\tickerSymbol -> void $ forkIO $ do
+            let udelay = (Map.!) delays tickerSymbol
+            threadDelay udelay
+            putStrLn $ "Delay expired. Retrieve and insert " ++ tickerSymbol
+            insertTickerPostgres tickerSymbol
+        ) tickerSymbols
