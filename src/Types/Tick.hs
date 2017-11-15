@@ -26,6 +26,9 @@ import qualified System.Logger as Logger
 
 import qualified Data.Text.Lazy as Text (pack)
 
+import           Opaleye (Column)
+import qualified Opaleye.PGTypes as P
+
 
 data Tick = Tick { --timestamp :: UTCTime
                    open :: Double
@@ -34,6 +37,16 @@ data Tick = Tick { --timestamp :: UTCTime
                  , close :: Double
                  , volume :: Int
                  } deriving (Generic, Show)
+
+-- for Opaleye
+tickToTuple :: Tick -> (Double, Double, Double, Double, Int)
+tickToTuple (Tick open high low close volume) = (open, high, low, close, volume)
+
+tickToPostgres :: ZonedTime -> Tick -> (Column P.PGTimestamptz, Column P.PGFloat8, Column P.PGFloat8, Column P.PGFloat8, Column P.PGFloat8, Column P.PGInt4)
+tickToPostgres zonedTime (Tick open high low close volume) = let
+  utc = zonedTimeToUTC zonedTime
+  pgutc = P.pgUTCTime utc
+  in (pgutc, P.pgDouble open, P.pgDouble high, P.pgDouble low, P.pgDouble close, P.pgInt4 volume)
 
 instance FromJSON Tick where  -- TODO unsafe !!!
   parseJSON :: Aeson.Value -> Parser Tick

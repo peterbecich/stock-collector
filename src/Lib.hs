@@ -11,7 +11,7 @@ import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Time.Clock
 import Data.Time.LocalTime
 
-import Data.Map (Map, empty, size, mapKeys, toList)
+import Data.Map (Map, empty, size, mapKeys, toList, elems)
 
 import Data.HashMap.Lazy ((!))
 
@@ -31,6 +31,8 @@ import AlphaRequest
 import Types.AlphaMetaData
 import Types.Tick
 import Types.TimeSeriesResponse
+
+import Psql
 
 decodedMinute :: IO (Maybe (Map LocalTime Tick))
 decodedMinute = do
@@ -85,7 +87,7 @@ example = do
   -- putStrLn $ show timeSeriesResponse
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
   -- mapM_ (\(k, v) -> insertTick k v) (toList (ticks timeSeriesResponse))
-  insertTicks timeSeriesResponse
+  insertTicksCassandra timeSeriesResponse
 
 failedExample = do
   bogus <- badRequest -- fails with runtime error
@@ -98,8 +100,8 @@ failedExample = do
   mapM_ (putStrLn . show) (toList (ticks timeSeriesResponse))
 
 exampleSteel = do
-  msft <- exampleRequestSteel
-  timeSeriesResponse <- retrieveTimeSeriesResponse msft
+  steel <- exampleRequestSteel
+  timeSeriesResponse <- retrieveTimeSeriesResponse steel
   let tks = ticks timeSeriesResponse
       numTicks = size tks
   putStrLn $ "number of ticks: " ++ (show numTicks)
@@ -109,16 +111,32 @@ exampleSteel = do
 
 tickers = ["GOOG", "MSFT", "AAPL", "FB"]
 
-insertTicker :: String -> IO ()
-insertTicker tickerSymbol = do
+insertTickerCassandra :: String -> IO ()
+insertTickerCassandra tickerSymbol = do
   key <- getKey
   request <- formatRequest tickerSymbol (intervals !! 0) Full key
   timeSeriesResponse <- retrieveTimeSeriesResponse request
   let tks = ticks timeSeriesResponse
       numTicks = size tks
   putStrLn $ "number of ticks: " ++ (show numTicks)
-  insertTicks timeSeriesResponse
+  insertTicksCassandra timeSeriesResponse
 
 
-getTickers :: IO ()
-getTickers = mapM_ insertTicker tickers
+getTickersCassandra :: IO ()
+getTickersCassandra = mapM_ insertTickerCassandra tickers
+
+
+insertTickerPostgres :: String -> IO ()
+insertTickerPostgres tickerSymbol = do
+  key <- getKey
+  request <- formatRequest tickerSymbol (Interval "1min") Full key
+  timeSeriesResponse <- retrieveTimeSeriesResponse request
+  let
+    tks :: Map ZonedTime Tick
+    tks = ticks timeSeriesResponse
+    numTicks = size tks
+  putStrLn $ "number of ticks: " ++ (show numTicks)
+  postgresConnection <- getPsqlConnection
+  rowsInserted <- insertTicks tickerSymbol tks postgresConnection
+  putStrLn $ "number of rows inserted: " ++ (show rowsInserted)
+

@@ -80,8 +80,8 @@ insertTick tickerSymbol zonedTime tick = do
   putStrLn "done"
   Client.shutdown c
 
-insertTicks :: TimeSeriesResponse -> IO ()
-insertTicks tsr = do
+insertTicksCassandra :: TimeSeriesResponse -> IO ()
+insertTicksCassandra tsr = do
   g <- Logger.new Logger.defSettings :: IO Logger.Logger
   c <- Client.init g Client.defSettings
   let
