@@ -20,7 +20,7 @@ import Types.Exchange
 import Types.Exchange.Psql (nasdaq)
 import Types.Stock
 import Types.Stock
-import Types.Stock.Psql (bogusStock)
+-- import Types.Stock.Psql (bogusStock)
 import Types.Tick
 import Types.Tick.JSON
 import Types.AlphaMetaData
@@ -30,6 +30,8 @@ import Types.AlphaResponse
 
 import Data.Time.Clock
 import Data.Time.LocalTime
+
+-- TODO handle failed query much better!!  non-existent stock tickers, etc
 
 -- TODO don't assume exchange is NASDAQ!
 -- instance FromJSON AlphaResponse where
@@ -57,13 +59,15 @@ instance FromJSON (Exchange -> Stock -> AlphaResponse) where
     timeSeries <- (response .: "Time Series (1min)") :: Parser (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
 
     let
+      -- TODO don't assume Eastern !!
       timeZone :: TimeZone
       timeZone = TimeZone (-300) False "US/Eastern"
 
-      timeSeriesTransformed :: [Tick]
-      timeSeriesTransformed = transformTicksMap bogusStock timeZone timeSeries
+      -- TODO simplify
+      timeSeriesTransformed :: Stock -> [Tick]
+      timeSeriesTransformed stock = transformTicksMap stock timeZone timeSeries
 
-      falphaResponse exchange stock = AlphaResponse exchange stock timeSeriesTransformed
+      falphaResponse exchange stock = AlphaResponse exchange stock (timeSeriesTransformed stock)
       
     return falphaResponse
 
@@ -72,24 +76,24 @@ instance FromJSON (Exchange -> Stock -> AlphaResponse) where
 exampleResponseStr :: IO String
 exampleResponseStr = readFile "sample/sampleResponse.json"
 
-exampleDecodeAlphaResponse :: IO AlphaResponse
-exampleDecodeAlphaResponse = do
-  responseString <- pack <$> exampleResponseStr
+-- exampleDecodeAlphaResponse :: IO AlphaResponse
+-- exampleDecodeAlphaResponse = do
+--   responseString <- pack <$> exampleResponseStr
 
-  let
-    eAlphaResponse :: Either String (Exchange -> Stock -> AlphaResponse)
-    eAlphaResponse = eitherDecode responseString
+--   let
+--     eAlphaResponse :: Either String (Exchange -> Stock -> AlphaResponse)
+--     eAlphaResponse = eitherDecode responseString
 
-    -- unsafe
+--     -- unsafe
 
-    falphaResponse :: Exchange -> Stock -> AlphaResponse
-    (Right falphaResponse) = eAlphaResponse
+--     falphaResponse :: Exchange -> Stock -> AlphaResponse
+--     (Right falphaResponse) = eAlphaResponse
 
-    alphaResponse = falphaResponse nasdaq bogusStock
+--     alphaResponse = falphaResponse nasdaq bogusStock
 
-  -- case eAlphaResponse of
-  --   (Left err) -> putStrLn err
-  --   (Right res) -> putStrLn $ show res
+--   -- case eAlphaResponse of
+--   --   (Left err) -> putStrLn err
+--   --   (Right res) -> putStrLn $ show res
 
-  return alphaResponse
+--   return alphaResponse
 

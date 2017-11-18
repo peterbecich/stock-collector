@@ -16,6 +16,8 @@ import Network.HTTP.Simple (Request, parseRequest)
 
 import Data.Yaml.Config
 
+import Types.Stock
+
 -- https://www.alphavantage.co/documentation/#intraday
 
 type Symbol = [Char]
@@ -67,3 +69,14 @@ exampleRequestSteel :: IO Request
 exampleRequestSteel = do
   key <- getKey
   formatRequest "X" (interval) Full key
+
+simpleCompactRequest :: Stock -> IO Request
+simpleCompactRequest stock = do
+  key <- getKey
+  formatRequest (symbol stock) interval Compact key
+
+simpleFullRequest :: Stock -> IO Request
+simpleFullRequest stock = do
+  key <- getKey
+  formatRequest (symbol stock) interval Full key
+

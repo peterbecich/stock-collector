@@ -38,7 +38,7 @@ import Types.AlphaResponse
 import Types.AlphaResponse.JSON
 
 import Types.Exchange.Psql (nasdaq, insertExchange)
-import Types.Stock.Psql (bogusStock, insertStock)
+import Types.Stock.Psql (insertStock, getStocks)
 import Types.Tick.Psql (insertTicks)
 
 import DB.Psql
@@ -60,16 +60,75 @@ retrieveAlphaResponse exchange stock requestURI = do
   return alphaResponse
 
 
-retrieveSteel = do
-  req <- exampleRequestSteel
-  retrieveAlphaResponse nasdaq bogusStock req
+-- retrieveSteel = do
+--   req <- exampleRequestSteel
+--   retrieveAlphaResponse nasdaq bogusStock req
   
 
--- US Steel
-retrieveAndInsertSteel = do
+-- -- US Steel
+-- retrieveAndInsertSteel = do
+--   psqlConn <- getPsqlConnection "conf/collector.yaml"
+--   req <- exampleRequestSteel
+--   alphaResponse <- retrieveAlphaResponse nasdaq bogusStock req
+--   rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
+--   closePsqlConnection psqlConn
+--   return rowsInserted
+  
+
+
+retrieveAndInsertSixteenStocks = do
   psqlConn <- getPsqlConnection "conf/collector.yaml"
-  req <- exampleRequestSteel
-  alphaResponse <- retrieveAlphaResponse nasdaq bogusStock req
-  rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
-  return rowsInserted
+  stocks <- getStocks psqlConn :: IO [Stock]
+  let stocks' = take 16 stocks
+  mapM_ (\stock -> putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)) stocks'
+
+  putStrLn "----------------------"
+  -- let
+  --   requests :: [(Stock, Request)]
+  --   requests = (\stock -> (stock, simpleCompactRequest stock)) <$> stocks'
+
+  mapM_ (\stock -> do
+            request <- simpleCompactRequest stock
+            alphaResponse <- retrieveAlphaResponse nasdaq stock request
+            putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)
+            rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
+            putStrLn $ (symbol stock) ++ " rows inserted: " ++ (show rowsInserted)
+        ) stocks'
+  
+  
+  closePsqlConnection psqlConn
+
+
+retrieveAndInsertNStocks n = do
+  psqlConn <- getPsqlConnection "conf/collector.yaml"
+  stocks <- getStocks psqlConn :: IO [Stock]
+  closePsqlConnection psqlConn  
+  let stocks' = take n stocks
+  mapM_ (\stock -> putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)) stocks'
+
+  putStrLn "----------------------"
+
+  mapM_ (\stock -> forkIO $ do
+            request <- simpleFullRequest stock
+            -- delay
+            delay <- randomRIO (1, 2*n)
+            let udelay :: Int
+                udelay = delay * 1000000
+            
+            threadDelay udelay
+
+            putStrLn $ "retrieve " ++ (symbol stock)
+            alphaResponse <- retrieveAlphaResponse nasdaq stock request
+            
+            putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)
+            psqlConn <- getPsqlConnection "conf/collector.yaml"            
+            
+            rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
+            closePsqlConnection psqlConn            
+            putStrLn $ (symbol stock) ++ " rows inserted: " ++ (show rowsInserted)
+        ) stocks'
+  
+  
+
+
   

@@ -17,7 +17,7 @@ import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Control.Monad
 
 import Types.Stock
-import Types.Stock.Psql (bogusStock)
+-- import Types.Stock.Psql (bogusStock)
 import Types.Tick
 
 import Data.Time.Clock
@@ -40,19 +40,19 @@ ticksParser wholeObject = wholeObject .: "Time Series (1min)"
 exampleTickStr2 :: IO String
 exampleTickStr2 = readFile "sample/tick2.json"
 
-exampleDecodeTick :: IO (Either String Tick)
-exampleDecodeTick = do
-  tickString <- pack <$> exampleTickStr2
-  now <- getCurrentTime
-  let
-    eFTick :: Either String (UTCTime -> Stock -> Tick)
-    eFTick = eitherDecode tickString
+-- exampleDecodeTick :: IO (Either String Tick)
+-- exampleDecodeTick = do
+--   tickString <- pack <$> exampleTickStr2
+--   now <- getCurrentTime
+--   let
+--     eFTick :: Either String (UTCTime -> Stock -> Tick)
+--     eFTick = eitherDecode tickString
 
-  eTick <- pure $ do
-    fTick <- eFTick
-    return $ fTick now bogusStock
+--   eTick <- pure $ do
+--     fTick <- eFTick
+--     return $ fTick now bogusStock
 
-  return eTick
+--   return eTick
 
 transformTicksMap :: Stock
                   -> TimeZone
@@ -71,22 +71,22 @@ exampleTicksStr :: IO String
 exampleTicksStr = readFile "sample/ticks2.json"
 
 --exampleDecodeTicks :: IO (Either String (Mp.Map LocalTime (UTCTime -> Stock -> Tick)))
-exampleDecodeTicks = do
-  ticksString <- pack <$> exampleTicksStr
-  let
-    eMFTicks :: Either String (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
-    eMFTicks = eitherDecode ticksString
-  -- unsafe
-    mFTicks :: (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
-    (Right mFTicks) = eMFTicks
+-- exampleDecodeTicks = do
+--   ticksString <- pack <$> exampleTicksStr
+--   let
+--     eMFTicks :: Either String (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
+--     eMFTicks = eitherDecode ticksString
+--   -- unsafe
+--     mFTicks :: (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
+--     (Right mFTicks) = eMFTicks
 
-    timeZone :: TimeZone
-    timeZone = TimeZone (-300) False "US/Eastern"
+--     timeZone :: TimeZone
+--     timeZone = TimeZone (-300) False "US/Eastern"
     
-    ticks :: [Tick]
-    ticks = transformTicksMap bogusStock timeZone mFTicks
+--     ticks :: [Tick]
+--     ticks = transformTicksMap bogusStock timeZone mFTicks
 
-  return ticks
+--   return ticks
 
     
 
