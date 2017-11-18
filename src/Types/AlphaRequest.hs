@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module AlphaRequest where
+module Types.AlphaRequest where
 
 import Prelude hiding (lookup)
 
@@ -23,19 +23,9 @@ type Symbol = [Char]
 -- newtype Interval = Interval DiffTime
 -- -- https://hackage.haskell.org/package/time-1.8.0.3/docs/Data-Time-Clock.html#t:DiffTime
 
--- intervals :: [Interval]
--- intervals =
---   [ Interval $ secondsToDiffTime 60
---   , Interval $ secondsToDiffTime 300
---   , Interval $ secondsToDiffTime 900
---   , Interval $ secondsToDiffTime 1800
---   , Interval $ secondsToDiffTime 3600
---   ]
-
 newtype Interval = Interval String deriving Show
 
-intervals :: [Interval]
-intervals  = [Interval "1min", Interval "5min", Interval "15min", Interval "30min", Interval "60min"]
+interval = Interval "1min"
 
 data OutputSize = Compact | Full
 
@@ -65,15 +55,15 @@ getKey = do
 exampleRequest :: IO Request
 exampleRequest = do
   key <- getKey
-  formatRequest "MSFT" (intervals !! 0) Compact key
+  formatRequest "MSFT" (interval) Compact key
 
 badRequest :: IO Request
 badRequest = do
   key <- getKey
-  formatRequest "ASHUDSADUNTAHUD" (intervals !! 0) Compact key
+  formatRequest "ASHUDSADUNTAHUD" (interval) Compact key
 
 
 exampleRequestSteel :: IO Request
 exampleRequestSteel = do
   key <- getKey
-  formatRequest "X" (intervals !! 0) Full key
+  formatRequest "X" (interval) Full key

@@ -17,7 +17,7 @@ import Data.Time.LocalTime
 import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
 import qualified Data.Map.Lazy as Map ((!)) 
 
-import Data.HashMap.Lazy ((!))
+import qualified Data.HashMap.Lazy as HMap ((!), keys)
 
 import Control.Monad
 import Data.Functor
@@ -30,20 +30,15 @@ import qualified Data.ByteString.Lazy as LS
 
 import Network.HTTP.Simple
 
-import AlphaRequest
+import Types.Exchange
+import Types.Stock
 
-import Types.AlphaMetaData
-import Types.Tick
--- import Types.Tick.JSON
+import Types.AlphaRequest
+import Types.AlphaResponse
+import Types.AlphaResponse.JSON
 
--- decodedMinute :: IO (Maybe (Map LocalTime Tick))
--- decodedMinute = do
---   file <- LS.readFile "sample/one_minute.json" :: IO LS.ByteString
---   maybeWholeOb <- pure $ decode file :: IO (Maybe Object)
---   return $ do
---     wholeOb <- maybeWholeOb
---     ticks <- parseMaybe (\ob -> ob .: "Time Series (1min)") wholeOb
---     ticks
+import Types.Exchange.Psql (nasdaq)
+import Types.Stock.Psql (bogusStock)
 
 
 -- instance Eq ZonedTime where
@@ -52,67 +47,20 @@ import Types.Tick
 -- instance Ord ZonedTime where
 --   compare zt1 zt2 = compare (zonedTimeToUTC zt1) (zonedTimeToUTC zt2)
 
--- retrieveTimeSeriesResponse :: Request -> IO TimeSeriesResponse
--- retrieveTimeSeriesResponse url = do
---   responseValue <- httpJSON url :: IO (Response Value)
---   let
---     -- possible runtime error if match fails
---     (Object body) = getResponseBody responseValue
---     metaDataVal :: Value
---     metaDataVal = body ! "Meta Data"
---     metaDataResult = fromJSON metaDataVal :: Result AlphaMetaData
---     (Success metaData) = metaDataResult  -- TODO unsafe unpack!
---     timeSeriesVal :: Value
---     timeSeriesVal = body ! "Time Series (1min)"
---     (Object timeSeriesOb) = timeSeriesVal-- TODO also unsafe
---     zonedTime' :: LocalTime -> ZonedTime
---     zonedTime' localTime = ZonedTime localTime (timeZone metaData)
---     timeSeriesResult :: Result (Map ZonedTime Tick)
---     timeSeriesResult = fmap (\mp -> mapKeys zonedTime' mp) (parse ticksParser body)
---   case (metaDataResult, timeSeriesResult) of -- error-prone
---     (Success metaData, Success ticks) ->
---       return $ TimeSeriesResponse metaData ticks
---     (Success metaData, _) ->
---       return $ TimeSeriesResponse metaData empty
---     (_, _) -> undefined
+-- retrieveAlphaResponse :: Exchange -> Stock -> Request -> IO AlphaResponse
+retrieveAlphaResponse exchange stock requestURI = do
+  responseFAlphaResponse <- httpJSON requestURI :: IO (Response (Exchange -> Stock -> AlphaResponse))
+  let
+    fAlphaResponse :: (Exchange -> Stock -> AlphaResponse)
+    fAlphaResponse = getResponseBody responseFAlphaResponse
 
--- -- TODO come back here!  not safe yet
--- safeRetrieve :: Request -> IO (Maybe TimeSeriesResponse)
--- safeRetrieve url = Just <$> (retrieveTimeSeriesResponse url)
+    alphaResponse = fAlphaResponse exchange stock
+
+  return alphaResponse
 
 
--- insertTickerPostgres :: String -> IO ()
--- insertTickerPostgres tickerSymbol = do
---   key <- getKey
---   request <- formatRequest tickerSymbol (Interval "1min") Full key
---   timeSeriesResponse <- retrieveTimeSeriesResponse request
---   let
---     tks :: Map ZonedTime Tick
---     tks = ticks timeSeriesResponse
---     numTicks = size tks
---   putStrLn $ "number of ticks: " ++ (show numTicks)
---   postgresConnection <- getPsqlConnection
---   rowsInserted <- insertTicks tickerSymbol tks postgresConnection
---   putStrLn $ "number of rows inserted: " ++ (show rowsInserted)
-
-
--- getTickersPostgres :: IO ()
--- getTickersPostgres = do
---   tickerSymbols <- getTickerSymbols "conf/fortune500tickers.txt"
---   -- tickerSymbols <- getTickerSymbols "conf/tenTickers.txt"
---   putStrLn $ show tickerSymbols
---   delays <- foldM (\map tickerSymbol -> do
---                       delay <- randomRIO (1, 600)
---                       let
---                         udelay :: Int
---                         udelay = delay * 1000000
---                       return $ insert tickerSymbol udelay map
---                   ) empty tickerSymbols
---   putStrLn $ show $ assocs delays
+retrieveSteel = do
+  req <- exampleRequestSteel
+  retrieveAlphaResponse nasdaq bogusStock req
   
---   mapM_ (\tickerSymbol -> void $ forkIO $ do
---             let udelay = (Map.!) delays tickerSymbol
---             threadDelay udelay
---             putStrLn $ "Delay expired. Retrieve and insert " ++ tickerSymbol
---             insertTickerPostgres tickerSymbol
---         ) tickerSymbols
+

@@ -10,7 +10,7 @@ import qualified Data.Aeson as Aeson
 
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 
-import qualified Data.Map as Mp (Map, empty, keys)
+import qualified Data.Map as Mp --  (Map, empty, keys)
 import Data.Text.Internal (Text)
 import Data.ByteString.Lazy.Char8 (pack, unpack)
 
@@ -32,8 +32,8 @@ instance FromJSON (UTCTime -> Stock -> Tick) where
     volume <- read <$> tick .: "5. volume"
     return $ (\timestamp stock -> Tick timestamp open high low close volume stock)
 
--- ticksParser :: Object -> Parser (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
--- ticksParser wholeObject = wholeObject .: "Time Series (1min)"
+ticksParser :: Object -> Parser (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
+ticksParser wholeObject = wholeObject .: "Time Series (1min)"
 
 -- instance FromJSON (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
 
@@ -53,10 +53,22 @@ exampleDecodeTick = do
     return $ fTick now bogusStock
 
   return eTick
-  
+
+transformTicksMap :: Stock
+                  -> TimeZone
+                  -> (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
+                  -> [Tick]
+transformTicksMap stock timeZone map = let
+  lFTicks :: [(LocalTime, (UTCTime -> Stock -> Tick))]
+  lFTicks = Mp.toList map
+
+  ticks :: [Tick]
+  ticks = fmap (\(localTime, f) -> f (localTimeToUTC timeZone localTime) stock) lFTicks
+
+  in ticks
 
 exampleTicksStr :: IO String
-exampleTicksStr = readFile "sample/ticks.json"
+exampleTicksStr = readFile "sample/ticks2.json"
 
 --exampleDecodeTicks :: IO (Either String (Mp.Map LocalTime (UTCTime -> Stock -> Tick)))
 exampleDecodeTicks = do
@@ -64,8 +76,18 @@ exampleDecodeTicks = do
   let
     eMFTicks :: Either String (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
     eMFTicks = eitherDecode ticksString
+  -- unsafe
+    mFTicks :: (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
+    (Right mFTicks) = eMFTicks
 
-    -- mFTicks :: Mp.Map LocalTime (UTCTime -> Stock -> Tick)
-    -- (Right mFTicks) = eMFTicks
-  putStrLn $ show $ Mp.keys <$> eMFTicks
-  -- return eMFTicks
+    timeZone :: TimeZone
+    timeZone = TimeZone (-300) False "US/Eastern"
+    
+    ticks :: [Tick]
+    ticks = transformTicksMap bogusStock timeZone mFTicks
+
+  return ticks
+
+    
+
+
