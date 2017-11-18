@@ -39,9 +39,14 @@ import Types.AlphaResponse.JSON
 
 import Types.Exchange.Psql (nasdaq, insertExchange)
 import Types.Stock.Psql (insertStock, getStocks)
+import Types.Stock.Redis
 import Types.Tick.Psql (insertTicks)
 
 import DB.Psql
+import DB.Redis (getRedisConnection, closeRedisConnection)
+
+import Database.Redis
+
 -- instance Eq ZonedTime where
 --   (==) zt1 zt2 = (zonedTimeToUTC zt1) == (zonedTimeToUTC zt2)
   
@@ -63,16 +68,15 @@ retrieveAlphaResponse exchange stock requestURI = do
 -- retrieveSteel = do
 --   req <- exampleRequestSteel
 --   retrieveAlphaResponse nasdaq bogusStock req
-  
 
 -- -- US Steel
--- retrieveAndInsertSteel = do
---   psqlConn <- getPsqlConnection "conf/collector.yaml"
---   req <- exampleRequestSteel
---   alphaResponse <- retrieveAlphaResponse nasdaq bogusStock req
---   rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
---   closePsqlConnection psqlConn
---   return rowsInserted
+retrieveAndInsertSteel = do
+  psqlConn <- getPsqlConnection "conf/collector.yaml"
+  req <- exampleRequestSteel
+  alphaResponse <- retrieveAlphaResponse nasdaq undefined req
+  rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
+  closePsqlConnection psqlConn
+  return rowsInserted
   
 
 
@@ -98,20 +102,26 @@ retrieveAndInsertSixteenStocks = do
   
   closePsqlConnection psqlConn
 
-
-retrieveAndInsertNStocks n = do
+retrieveStocks :: IO ([Stock])
+retrieveStocks = do
   psqlConn <- getPsqlConnection "conf/collector.yaml"
   stocks <- getStocks psqlConn :: IO [Stock]
-  closePsqlConnection psqlConn  
-  let stocks' = take n stocks
-  mapM_ (\stock -> putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)) stocks'
+  closePsqlConnection psqlConn
+  return stocks
+  
+retrieveAndInsertStockTicks :: [Stock] -> IO ()
+retrieveAndInsertStockTicks stocks = do
+  redisConn <- getRedisConnection "conf/collector.yaml"
+  
+  mapM_ (\stock -> putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)) stocks
 
   putStrLn "----------------------"
 
   mapM_ (\stock -> forkIO $ do
             request <- simpleFullRequest stock
+            --request <- simpleCompactRequest stock
             -- delay
-            delay <- randomRIO (1, 2*n)
+            delay <- randomRIO (1, 4*(length stocks))
             let udelay :: Int
                 udelay = delay * 1000000
             
@@ -119,16 +129,25 @@ retrieveAndInsertNStocks n = do
 
             putStrLn $ "retrieve " ++ (symbol stock)
             alphaResponse <- retrieveAlphaResponse nasdaq stock request
-            
+
             putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)
             psqlConn <- getPsqlConnection "conf/collector.yaml"            
             
             rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
-            closePsqlConnection psqlConn            
+            closePsqlConnection psqlConn
+
+            let lastTick = getLastTick alphaResponse
+
+            runRedis redisConn (setTickTimestamp lastTick)
+            
             putStrLn $ (symbol stock) ++ " rows inserted: " ++ (show rowsInserted)
-        ) stocks'
-  
-  
+        ) stocks
 
+  void $ closeRedisConnection redisConn
 
+retrieveStocksAndInsertTicks :: IO ()
+retrieveStocksAndInsertTicks = retrieveStocks >>= retrieveAndInsertStockTicks
+
+retrieveNStocksAndInsertTicks :: Int -> IO ()
+retrieveNStocksAndInsertTicks n = ((\l -> take n l) <$> retrieveStocks) >>= retrieveAndInsertStockTicks
   

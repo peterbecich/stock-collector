@@ -23,7 +23,7 @@ packages:
 - .
 - location:
     git: https://github.com/peterbecich/stock-common.git
-    commit: ba2c4cfdcc0097b46e1b1f0e4e103201f122eb33
+    commit: ae4fdaedd3aa7121120b2012d35c3b2b51581239
   extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
