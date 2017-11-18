@@ -37,10 +37,11 @@ import Types.AlphaRequest
 import Types.AlphaResponse
 import Types.AlphaResponse.JSON
 
-import Types.Exchange.Psql (nasdaq)
-import Types.Stock.Psql (bogusStock)
+import Types.Exchange.Psql (nasdaq, insertExchange)
+import Types.Stock.Psql (bogusStock, insertStock)
+import Types.Tick.Psql (insertTicks)
 
-
+import DB.Psql
 -- instance Eq ZonedTime where
 --   (==) zt1 zt2 = (zonedTimeToUTC zt1) == (zonedTimeToUTC zt2)
   
@@ -64,3 +65,11 @@ retrieveSteel = do
   retrieveAlphaResponse nasdaq bogusStock req
   
 
+-- US Steel
+retrieveAndInsertSteel = do
+  psqlConn <- getPsqlConnection "conf/collector.yaml"
+  req <- exampleRequestSteel
+  alphaResponse <- retrieveAlphaResponse nasdaq bogusStock req
+  rowsInserted <- insertTicks (ticks alphaResponse) psqlConn
+  return rowsInserted
+  
