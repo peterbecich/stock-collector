@@ -21,11 +21,8 @@ resolver: lts-9.13
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
-# - location:
-#     git: https://github.com/peterbecich/stock-common.git
-#     commit: ae4fdaedd3aa7121120b2012d35c3b2b51581239
-#   extra-dep: true
 - stock-common
+extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 

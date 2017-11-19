@@ -21,7 +21,6 @@ library
                      , Types.AlphaMetaData
                      , Types.AlphaMetaData.JSON
                      , Types.AlphaResponse.JSON
-                     , Types.Tick.JSON
 
   build-depends:       base >= 4.7 && < 5
                      , wreq

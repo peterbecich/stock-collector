@@ -111,7 +111,6 @@ retrieveStocks = do
   
 retrieveAndInsertStockTicks :: [Stock] -> IO ()
 retrieveAndInsertStockTicks stocks = do
-  redisConn <- getRedisConnection "conf/collector.yaml"
   
   mapM_ (\stock -> putStrLn $ (show (stockId stock)) ++ "  " ++ (symbol stock)) stocks
 
@@ -137,13 +136,16 @@ retrieveAndInsertStockTicks stocks = do
             closePsqlConnection psqlConn
 
             let lastTick = getLastTick alphaResponse
+            redisConn <- getRedisConnection "conf/collector.yaml"
 
             runRedis redisConn (setTickTimestamp lastTick)
+
+            -- TODO handle error
+            void $ closeRedisConnection redisConn
             
             putStrLn $ (symbol stock) ++ " rows inserted: " ++ (show rowsInserted)
         ) stocks
 
-  void $ closeRedisConnection redisConn
 
 retrieveStocksAndInsertTicks :: IO ()
 retrieveStocksAndInsertTicks = retrieveStocks >>= retrieveAndInsertStockTicks
