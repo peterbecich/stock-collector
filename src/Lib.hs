@@ -120,7 +120,7 @@ retrieveAndInsertStockTicks stocks = do
             request <- simpleFullRequest stock
             --request <- simpleCompactRequest stock
             -- delay
-            delay <- randomRIO (1, 4*(length stocks))
+            delay <- randomRIO (1, 2*(length stocks))
             let udelay :: Int
                 udelay = delay * 1000000
             
