@@ -47,13 +47,7 @@ import DB.Redis (getRedisConnection, closeRedisConnection)
 
 import Database.Redis
 
--- instance Eq ZonedTime where
---   (==) zt1 zt2 = (zonedTimeToUTC zt1) == (zonedTimeToUTC zt2)
-  
--- instance Ord ZonedTime where
---   compare zt1 zt2 = compare (zonedTimeToUTC zt1) (zonedTimeToUTC zt2)
-
--- retrieveAlphaResponse :: Exchange -> Stock -> Request -> IO AlphaResponse
+retrieveAlphaResponse :: Exchange -> Stock -> Request -> IO AlphaResponse
 retrieveAlphaResponse exchange stock requestURI = do
   responseFAlphaResponse <- httpJSON requestURI :: IO (Response (Exchange -> Stock -> AlphaResponse))
   let
@@ -63,11 +57,6 @@ retrieveAlphaResponse exchange stock requestURI = do
     alphaResponse = fAlphaResponse exchange stock
 
   return alphaResponse
-
-
--- retrieveSteel = do
---   req <- exampleRequestSteel
---   retrieveAlphaResponse nasdaq bogusStock req
 
 -- -- US Steel
 retrieveAndInsertSteel = do
@@ -79,7 +68,7 @@ retrieveAndInsertSteel = do
   return rowsInserted
   
 
-
+ 
 retrieveAndInsertSixteenStocks = do
   psqlConn <- getPsqlConnection "conf/collector.yaml"
   stocks <- getStocks psqlConn :: IO [Stock]
@@ -120,7 +109,7 @@ retrieveAndInsertStockTicks stocks = do
             request <- simpleFullRequest stock
             --request <- simpleCompactRequest stock
             -- delay
-            delay <- randomRIO (1, 2*(length stocks))
+            delay <- randomRIO (1, 4*(length stocks))
             let udelay :: Int
                 udelay = delay * 1000000
             
