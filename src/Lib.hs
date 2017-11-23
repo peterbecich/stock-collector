@@ -39,7 +39,8 @@ import Types.AlphaResponse.JSON
 
 import Types.Exchange.Psql (nasdaq, insertExchange)
 import Types.Stock.Psql (insertStock, getStocks)
-import Types.Stock.Redis
+
+import Types.MostRecentTick.Redis
 import Types.Tick.Psql (insertTicks)
 
 import DB.Psql
