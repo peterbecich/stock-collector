@@ -129,6 +129,8 @@ forkChild io = do
   putMVar children (mvar:childs)
   forkFinally io (\_ -> putMVar mvar ())
 
+multiplier :: Int
+multiplier = 4
 
 retrieveAndInsertStocksTicks :: [Stock.Stock] -> IO ()
 retrieveAndInsertStocksTicks stocks = do
@@ -138,7 +140,7 @@ retrieveAndInsertStocksTicks stocks = do
   putStrLn "----------------------"
 
   mapM_ (\stock -> do
-            delay <- randomRIO (1, 7*(length stocks))
+            delay <- randomRIO (1, multiplier * (length stocks))
 
             let
               mdelay :: Double
