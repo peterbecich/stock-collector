@@ -6,24 +6,18 @@ module Types.AlphaRequest where
 
 import Prelude hiding (lookup)
 
-import GHC.Generics
 import Data.Aeson
 import Data.Aeson.Types (Parser, parse, parseMaybe)
-
 import Data.Time.Clock
-
-import Network.HTTP.Simple (Request, parseRequest)
-
 import Data.Yaml.Config
+import GHC.Generics
+import Network.HTTP.Simple (Request, parseRequest)
 
 import Types.Stock
 
 -- https://www.alphavantage.co/documentation/#intraday
 
 type Symbol = [Char]
-
--- newtype Interval = Interval DiffTime
--- -- https://hackage.haskell.org/package/time-1.8.0.3/docs/Data-Time-Clock.html#t:DiffTime
 
 newtype Interval = Interval String deriving Show
 
@@ -53,22 +47,6 @@ getKey = do
   keys <- subconfig "keys" config
   alphaKey <- lookup "alphaVantage" keys
   return $ APIKey alphaKey
-
-exampleRequest :: IO Request
-exampleRequest = do
-  key <- getKey
-  formatRequest "MSFT" (interval) Compact key
-
-badRequest :: IO Request
-badRequest = do
-  key <- getKey
-  formatRequest "ASHUDSADUNTAHUD" (interval) Compact key
-
-
-exampleRequestSteel :: IO Request
-exampleRequestSteel = do
-  key <- getKey
-  formatRequest "X" (interval) Full key
 
 simpleCompactRequest :: Stock -> IO Request
 simpleCompactRequest stock = do

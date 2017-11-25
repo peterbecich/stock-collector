@@ -4,36 +4,27 @@
 
 module Lib where
 
-import Control.Concurrent (threadDelay, forkIO)
-import System.Random
-
-import GHC.Generics
-import Data.Aeson
-import Data.Aeson.Types (Parser, parse, parseMaybe)
-
-import Data.Time.Clock
-import Data.Time.LocalTime
-
-import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
-import qualified Data.Map.Lazy as Map ((!)) 
-
-import qualified Data.HashMap.Lazy as HMap ((!), keys)
-
 import Control.Concurrent
+import Control.Concurrent (threadDelay, forkIO)
 import Control.Concurrent.MVar
 import Control.Monad
 import Control.Monad.Par.IO
-import System.IO.Unsafe (unsafePerformIO)
-
+import Data.Aeson
+import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Functor
-
-import qualified Data.ByteString.Char8 as S8
-import qualified Data.ByteString as BS
-
-import qualified Data.ByteString.Lazy.Char8 as L8
-import qualified Data.ByteString.Lazy as LS
-
+import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
+import Data.Time.Clock
+import Data.Time.LocalTime
+import GHC.Generics
 import Network.HTTP.Simple
+import System.IO.Unsafe (unsafePerformIO)
+import System.Random
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as S8
+import qualified Data.ByteString.Lazy as LS
+import qualified Data.ByteString.Lazy.Char8 as L8
+import qualified Data.HashMap.Lazy as HMap ((!), keys)
+import qualified Data.Map.Lazy as Map ((!)) 
 
 import Types.Exchange
 import qualified Types.Stock as Stock

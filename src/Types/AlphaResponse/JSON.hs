@@ -5,27 +5,22 @@
 
 module Types.AlphaResponse.JSON where
 
-import Data.Aeson
-import qualified Data.Aeson as Aeson
-
-import Data.Aeson.Types (Parser, parse, parseMaybe)
-
-import qualified Data.Map as Mp --  (Map, empty, keys)
-import Data.Text.Internal (Text)
-import Data.ByteString.Lazy.Char8 (pack, unpack)
-
 import Control.Monad
+import Data.Aeson
+import Data.Aeson.Types (Parser, parse, parseMaybe)
+import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Text.Internal (Text)
+import qualified Data.Aeson as Aeson
+import qualified Data.Map as Mp --  (Map, empty, keys)
 
 import Types.Exchange
 import Types.Exchange.Psql (nasdaq)
 import Types.Stock
 import Types.Stock
--- import Types.Stock.Psql (bogusStock)
 import Types.Tick
 import Types.Tick.JSON
 import Types.AlphaMetaData
 import Types.AlphaMetaData.JSON
-
 import Types.AlphaResponse
 
 import Data.Time.Clock

@@ -3,7 +3,6 @@
 module Types.AlphaResponse where
 
 import Data.List
-
 import GHC.Generics
 
 import Types.Exchange
