@@ -26,6 +26,8 @@ import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.HashMap.Lazy as HMap ((!), keys)
 import qualified Data.Map.Lazy as Map ((!)) 
 
+import Database.Redis
+
 import Types.Exchange
 import qualified Types.Stock as Stock
 
@@ -42,7 +44,8 @@ import Types.Tick.Psql (insertTicks, insertTicksSafe)
 import DB.Psql
 import DB.Redis (getRedisConnection, closeRedisConnection)
 
-import Database.Redis
+import Stats.StockCovariance (pairCovarianceNStocks)
+
 
 retrieveAlphaResponse :: Exchange -> Stock.Stock -> Request -> IO AlphaResponse
 retrieveAlphaResponse exchange stock requestURI = do
