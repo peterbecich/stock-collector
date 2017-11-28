@@ -1,6 +1,8 @@
 [submodule "stock-common"]
 	path = stock-common
 	url = git@github.com:peterbecich/stock-common.git
+	branch = master
 [submodule "stock-stats"]
 	path = stock-stats
 	url = git@github.com:peterbecich/stock-stats.git
+	branch = master
