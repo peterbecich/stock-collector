@@ -11,6 +11,7 @@ import Control.Monad
 import Control.Monad.Par.IO
 import Data.Aeson
 import Data.Aeson.Types (Parser, parse, parseMaybe)
+import Data.List
 import Data.Functor
 import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
 import Data.Time.Clock
@@ -164,7 +165,7 @@ retrieveStocksAndInsertTicks = do
   psqlConn <- getPsqlConnection "conf/collector.yaml"            
   
   pairCovarianceStocks redisConn psqlConn stocks
-
+  putStrLn "done calculating covariance pairs"
   void $ closeRedisConnection redisConn
   closePsqlConnection psqlConn
 
@@ -174,7 +175,8 @@ retrieveNStocksAndInsertTicks n = do
   retrieveAndInsertStocksTicks stocks
   redisConn <- getRedisConnection "conf/collector.yaml"
   psqlConn <- getPsqlConnection "conf/collector.yaml"            
-  
+
+  putStrLn $ show (length stocks) ++ " stocks to calculate covariances for"
   pairCovarianceStocks redisConn psqlConn stocks
 
   void $ closeRedisConnection redisConn
