@@ -46,6 +46,12 @@ import DB.Redis (getRedisConnection, closeRedisConnection)
 
 import Stats.StockCovariance (pairCovarianceNStocks, pairCovarianceStocks)
 
+-- use connection pool
+-- https://www.stackage.org/lts-9.14/package/resource-pool-0.2.3.2
+-- https://github.com/parsonsmatt/servant-persistent/blob/master/src/Config.hs
+-- https://github.com/nomicflux/servant-opaleye-blog
+-- https://gist.github.com/thoughtpolice/e89d370f91039774f98bccf21e0cd877
+-- https://www.stackage.org/haddock/lts-9.14/resource-pool-0.2.3.2/Data-Pool.html#t:Pool
 
 retrieveAlphaResponse :: Exchange -> Stock.Stock -> Request -> IO AlphaResponse
 retrieveAlphaResponse exchange stock requestURI = do
