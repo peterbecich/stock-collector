@@ -44,7 +44,7 @@ import Types.Tick.Psql (insertTicks, insertTicksSafe)
 import DB.Psql
 import DB.Redis (getRedisConnection, closeRedisConnection)
 
-import Stats.StockCovariance (pairCovarianceNStocks)
+import Stats.StockCovariance (pairCovarianceNStocks, pairCovarianceStocks)
 
 
 retrieveAlphaResponse :: Exchange -> Stock.Stock -> Request -> IO AlphaResponse
@@ -151,10 +151,29 @@ retrieveAndInsertStocksTicks stocks = do
   waitForChildren
 
 retrieveStocksAndInsertTicks :: IO ()
-retrieveStocksAndInsertTicks = retrieveStocks >>= retrieveAndInsertStocksTicks
+retrieveStocksAndInsertTicks = do
+  stocks <- retrieveStocks
+  retrieveAndInsertStocksTicks stocks
+  redisConn <- getRedisConnection "conf/collector.yaml"
+  psqlConn <- getPsqlConnection "conf/collector.yaml"            
+  
+  pairCovarianceStocks redisConn psqlConn stocks
+
+  void $ closeRedisConnection redisConn
+  closePsqlConnection psqlConn
 
 retrieveNStocksAndInsertTicks :: Int -> IO ()
-retrieveNStocksAndInsertTicks n = ((\l -> take n l) <$> retrieveStocks) >>= retrieveAndInsertStocksTicks
+retrieveNStocksAndInsertTicks n = do
+  stocks <- ((\l -> take n l) <$> retrieveStocks)
+  retrieveAndInsertStocksTicks stocks
+  redisConn <- getRedisConnection "conf/collector.yaml"
+  psqlConn <- getPsqlConnection "conf/collector.yaml"            
+  
+  pairCovarianceStocks redisConn psqlConn stocks
+
+  void $ closeRedisConnection redisConn
+  closePsqlConnection psqlConn
+  
 
 
 
