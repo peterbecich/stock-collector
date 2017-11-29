@@ -11,5 +11,7 @@ jobs:
        - image: peterbecich/haskell-stack:0.0.1
      steps:
        - checkout
+       - run: git submodule sync
+       - run: git submodule update --init
        - run: stack setup --no-terminal
        - run: stack build --only-configure --no-terminal
