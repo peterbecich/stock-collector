@@ -28,8 +28,8 @@ addons:
 # https://docs.travis-ci.com/user/deployment/custom/
 after_success:
   - eval "$(ssh-agent -s)" #start the ssh agent
-  - chmod 600 .travis/scaleway_travis # this key should have push access
-  - ssh-add .travis/scaleway_travis
+  - chmod 600 scaleway_travis # this key should have push access
+  - ssh-add scaleway_travis
   - git remote add deploy git@ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com:/srv/git/stock-collector
   - git push deploy master
 
