@@ -1,0 +1,15 @@
+# https://gist.github.com/dbp/bef96402ea07001dfed2
+# https://circleci.com/docs/2.0/hello-world/
+# https://circleci.com/docs/2.0/configuration-reference/
+# https://hub.docker.com/_/haskell/
+version: 2
+jobs:
+   build:
+     docker:
+       #- image: haskell:8.0.2
+       #- image: ubuntu:14.04
+       - image: peterbecich/haskell-stack:0.0.1
+     steps:
+       - checkout
+       - run: stack setup --no-terminal
+       - run: stack build --only-configure --no-terminal
