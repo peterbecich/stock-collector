@@ -6,6 +6,7 @@ cache:
   - $HOME/.stack
 
 before_install:
+  - openssl aes-256-cbc -K $encrypted_67f787260264_key -iv $encrypted_67f787260264_iv -in scaleway_travis.enc -out scaleway_travis -d
   - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
   - git submodule update --init
   - sed -i 's/git@github.com:/https:\/\/github.com\//' stock-stats/.gitmodules
