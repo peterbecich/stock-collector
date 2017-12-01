@@ -3,5 +3,7 @@ module Main where
 import Lib
 
 main :: IO ()
-main = retrieveStocksAndInsertTicks
+main = collectStockTicks
+
+  --retrieveStocksAndInsertTicks
 --main = retrieveNStocksAndInsertTicks 16
