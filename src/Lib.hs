@@ -58,93 +58,6 @@ retrieveStocks = do
   closePsqlConnection psqlConn
   return stocks
 
--- given stock, retrieve ticks from AlphaVantage and insert them into Postgres
--- https://hackage.haskell.org/package/base-4.10.0.0/docs/Control-Concurrent.html#g:12
--- retrieveAndInsertStockTicks :: Int -> Stock.Stock -> IO ()
--- retrieveAndInsertStockTicks udelay stock = do
---     request <- simpleFullRequest stock
-
---     threadDelay udelay
-    
---     putStrLn $ show (Stock.stockId stock) ++ " " ++ (Stock.symbol stock) ++ "  retrieve "
-    
---     alphaResponse <- retrieveAlphaResponse (Stock.exchange stock) stock request
-
---     putStrLn $ show (Stock.stockId stock) ++ " " ++ (Stock.symbol stock) ++ " ticks retrieved: " ++ (show (length (ticks alphaResponse)))
-
---     psqlConn <- getPsqlConnection "conf/collector.yaml"            
-            
---     rowsInserted <- insertTicksSafe (ticks alphaResponse) psqlConn
-
---     putStrLn $ show (Stock.stockId stock) ++ " " ++ (Stock.symbol stock) ++ " rows inserted: " ++ (show rowsInserted)
-
---     closePsqlConnection psqlConn
-
---     let lastTick = getLastTick alphaResponse
-
---     redisConn <- getRedisConnection "conf/collector.yaml"
-
---     runRedis redisConn (setTickTimestamp lastTick)
-
---     putStrLn $ show (Stock.stockId stock) ++ " " ++ (Stock.symbol stock) ++ " most recent tick timestamp updated "
-
---     -- TODO handle error
---     void $ closeRedisConnection redisConn
-
-
--- retrieveAndInsertStocksTicks :: [Stock.Stock] -> IO ()
--- retrieveAndInsertStocksTicks stocks = do
-  
---   mapM_ (\stock -> putStrLn $ (show (Stock.stockId stock)) ++ "  " ++ (Stock.symbol stock)) stocks
-
---   putStrLn "----------------------"
-
---   mapM_ (\stock -> do
---             delay <- randomRIO (1, multiplier * (length stocks))
-
---             let
---               mdelay :: Double
---               mdelay = (fromInteger (toInteger delay)) / 60
---               udelay :: Int
---               udelay = delay * 1000000
-
---             putStrLn $ (Stock.symbol stock) ++ "  delay (minutes): " ++ show mdelay
-
-
---             void $ forkChild $ retrieveAndInsertStockTicks udelay stock
---         ) stocks
-
---   waitForChildren
-
--- retrieveStocksAndInsertTicks :: IO ()
--- retrieveStocksAndInsertTicks = do
---   stocks <- retrieveStocks
---   retrieveAndInsertStocksTicks stocks
---   redisConn <- getRedisConnection "conf/collector.yaml"
---   psqlConn <- getPsqlConnection "conf/collector.yaml"            
-  
---   pairCovarianceStocks redisConn psqlConn stocks
---   putStrLn "done calculating covariance pairs"
---   void $ closeRedisConnection redisConn
---   closePsqlConnection psqlConn
-
--- retrieveNStocksAndInsertTicks :: Int -> IO ()
--- retrieveNStocksAndInsertTicks n = do
---   stocks <- ((\l -> take n l) <$> retrieveStocks)
---   retrieveAndInsertStocksTicks stocks
---   redisConn <- getRedisConnection "conf/collector.yaml"
---   psqlConn <- getPsqlConnection "conf/collector.yaml"            
-
---   putStrLn $ show (length stocks) ++ " stocks to calculate covariances for"
---   pairCovarianceStocks redisConn psqlConn stocks
-
---   void $ closeRedisConnection redisConn
---   closePsqlConnection psqlConn
-
-
-----------------------------------------------
-
--- simple method to keep parent thread from finishing before all child threads are finished
 -- https://hackage.haskell.org/package/base-4.10.0.0/docs/Control-Concurrent.html#g:12
 children :: MVar [MVar ()]
 children = unsafePerformIO (newMVar [])
@@ -212,7 +125,7 @@ collectNStockTicks n = do
   putStrLn $ show (length stocks') ++ " stocks to retrieve ticks for"
 
   mapM_ (\stock -> void $ forkChild $ do
-            randomDelay (length stocks')
+            -- randomDelay (length stocks')
             request <- simpleFullRequest stock
             -- putStrLn $ show request
             alphaResponse <- retrieveAlphaResponse stock request
@@ -227,6 +140,9 @@ collectNStockTicks n = do
 
 collectStockTicks :: IO ()
 collectStockTicks = do
+  threads <- getNumCapabilities
+  putStrLn $ show threads ++ " threads"
+  
   psqlPool <- createPostgresPool confPath
   redisPool <- createRedisPool confPath
 
@@ -235,7 +151,7 @@ collectStockTicks = do
   putStrLn $ show (length stocks) ++ " stocks to retrieve ticks for"
 
   mapM_ (\stock -> void $ forkChild $ do
-            randomDelay (length stocks)
+            -- randomDelay (length stocks)
             request <- simpleFullRequest stock
             alphaResponse <- retrieveAlphaResponse stock request
             putStrLn $ (Stock.symbol stock) ++": retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
