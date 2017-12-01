@@ -44,7 +44,7 @@ import Types.MostRecentTick.Redis
 import Types.Tick.Psql (insertTicks, insertTicksSafe)
 
 import DB.Psql
-import DB.Redis (getRedisConnection, closeRedisConnection)
+import DB.Redis
 
 import Stats.StockCovariance (pairCovarianceNStocks, pairCovarianceStocks)
 
@@ -225,9 +225,10 @@ collectNStockTicks n = do
 
 collectStockTicks :: IO ()
 collectStockTicks = do
-  pool <- createPostgresPool confPath
+  psqlPool <- createPostgresPool confPath
+  redisPool <- createRedisPool confPath
 
-  stocks <- runQueryPool pool stockQuery :: IO [Stock.Stock]
+  stocks <- runQueryPool psqlPool stockQuery :: IO [Stock.Stock]
 
   putStrLn $ show (length stocks) ++ " stocks to retrieve ticks for"
 
@@ -237,8 +238,14 @@ collectStockTicks = do
             -- putStrLn $ show request
             alphaResponse <- retrieveAlphaResponse stock request
             putStrLn $ "retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
-            rowsInserted <- insertAlphaResponse pool alphaResponse
+            rowsInserted <- insertAlphaResponse psqlPool alphaResponse
+
+            let lastTick = getLastTick alphaResponse -- TODO improve
+
+            runRedisPool redisPool (setTickTimestamp lastTick)
+            
             putStrLn $ "inserted " ++ show rowsInserted ++ " rows"
+
         ) stocks
 
   waitForChildren
