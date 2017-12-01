@@ -43,6 +43,8 @@ import Types.Stock.Psql (insertStock, getStocks, stockQuery)
 import Types.MostRecentTick.Redis
 import Types.Tick.Psql (insertTicks, insertTicksSafe)
 
+import qualified Types.Tick as Tick
+
 import DB.Psql
 import DB.Redis
 
@@ -235,16 +237,17 @@ collectStockTicks = do
   mapM_ (\stock -> void $ forkChild $ do
             randomDelay (length stocks)
             request <- simpleFullRequest stock
-            -- putStrLn $ show request
             alphaResponse <- retrieveAlphaResponse stock request
-            putStrLn $ "retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
+            putStrLn $ (Stock.symbol stock) ++": retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
             rowsInserted <- insertAlphaResponse psqlPool alphaResponse
 
+            putStrLn $ (Stock.symbol stock) ++ ": inserted " ++ show rowsInserted ++ " rows"
+            
             let lastTick = getLastTick alphaResponse -- TODO improve
 
             runRedisPool redisPool (setTickTimestamp lastTick)
+            putStrLn $ (Stock.symbol stock) ++ ": set latest timestamp " ++ show (Tick.time lastTick)
             
-            putStrLn $ "inserted " ++ show rowsInserted ++ " rows"
 
         ) stocks
 
