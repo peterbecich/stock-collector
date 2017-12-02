@@ -55,3 +55,15 @@ extra-package-dbs: []
 
 ghc-options:
   "*": -j -threaded
+
+docker:
+  enable: true
+
+image:
+  containers:
+    -
+      base: "fpco/stack-build:lts-9.13"
+      name: "peterbecich/stock-collector"
+
+      entrypoints:
+        - stock-collector
