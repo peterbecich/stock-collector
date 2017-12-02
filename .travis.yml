@@ -1,4 +1,7 @@
-sudo: false
+sudo: required
+
+services:
+  - docker
 
 # Caching so the next build will be fast too.
 cache:
