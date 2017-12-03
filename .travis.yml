@@ -35,6 +35,7 @@ after_success:
   - eval "$(ssh-agent -s)" #start the ssh agent
   - chmod 600 scaleway_travis # this key should have push access
   - ssh-add scaleway_travis
+  - git config --global receive.denyCurrentBranch ignore
   - git remote add deploy git@ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com:/srv/stock-collector/.git
   - git push deploy master
 
