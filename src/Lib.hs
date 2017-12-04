@@ -95,7 +95,8 @@ randomDelay n = do
   threadDelay udelay
 
 confPath :: FilePath
-confPath = "conf/collector.yaml"
+confPath = "/usr/local/etc/collector.yaml"
+--confPath = "conf/collector.yaml"
 
 -- given stock, hit AlphaVantage REST endpoint
 retrieveAlphaResponse :: Stock.Stock -> Request -> IO AlphaResponse

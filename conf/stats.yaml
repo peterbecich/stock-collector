@@ -1,0 +1,15 @@
+
+db:
+  cassandra:
+    url: 127.0.0.1
+  postgres:
+    dbname: postgres
+    user: postgres
+    ip: 127.0.0.1
+    port: 5433
+  redis:
+    ip: 127.0.0.1
+    port: 6379
+    
+    
+  

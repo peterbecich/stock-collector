@@ -12,6 +12,7 @@ import Data.Time.Clock
 import Data.Yaml.Config
 import GHC.Generics
 import Network.HTTP.Simple (Request, parseRequest)
+import System.Environment
 
 import Types.Stock
 
@@ -38,15 +39,20 @@ formatRequest symbol (Interval mins) outputSize (APIKey apiKey) = do
   parseRequest requestString
 
 -- https://hackage.haskell.org/package/yaml-config-0.4.0/docs/Data-Yaml-Config.html
+-- getKey :: IO APIKey
+-- getKey = do
+--   let
+--     path :: FilePath
+--     path = "conf/collector.yaml"
+--   config <- load path
+--   keys <- subconfig "keys" config
+--   alphaKey <- lookup "alphaVantage" keys
+--   return $ APIKey alphaKey
+
+-- https://hackage.haskell.org/package/base-4.10.0.0/docs/System-Environment.html
 getKey :: IO APIKey
-getKey = do
-  let
-    path :: FilePath
-    path = "conf/collector.yaml"
-  config <- load path
-  keys <- subconfig "keys" config
-  alphaKey <- lookup "alphaVantage" keys
-  return $ APIKey alphaKey
+getKey = APIKey <$> getEnv "ALPHA_VANTAGE_KEY"
+  
 
 simpleCompactRequest :: Stock -> IO Request
 simpleCompactRequest stock = do

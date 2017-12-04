@@ -1,0 +1,38 @@
+
+CREATE TYPE tick (
+       open float,
+       high float,
+       low float,
+       close float,
+       volume int
+       );
+
+CREATE TABLE stocks (
+       info text,
+       symbol text,
+       date date,
+       ticks map<integer, frozen tick>,
+       PRIMARY KEY (symbol, date)
+       );
+       
+       
+       
+
+CREATE TABLE stocks (
+       info text,
+       symbol text,
+       timestamp date,
+       ticks map<string, string>,
+       PRIMARY KEY (symbol, timestamp)
+       );
+
+CREATE TABLE msft (
+       timestamp int,
+       open float,
+       high float,
+       low float,
+       close float,
+       volume int,
+       PRIMARY KEY (timestamp)
+       );
+

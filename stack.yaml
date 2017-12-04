@@ -27,6 +27,8 @@ image:
       base: "fpco/stack-build:lts-9.13"
       name: "peterbecich/stock-collector"
 
+      add:
+        conf/: /usr/local/etc/
       entrypoints:
         - stock-collector
         
