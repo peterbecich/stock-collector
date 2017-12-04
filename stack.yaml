@@ -25,7 +25,7 @@ image:
   containers:
     -
       # base: "fpco/stack-build:lts-9.13"
-      base: "fpco/stack-build-arm64:lts-9.13"
+      base: "peterbecich/stack-build-arm64:lts-9.13"
       name: "peterbecich/stock-collector"
 
       entrypoints:
