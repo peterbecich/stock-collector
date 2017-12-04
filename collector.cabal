@@ -34,8 +34,6 @@ library
                      , containers
                      , unordered-containers
                      , yaml-config >= 0.4.0
-                     , cql-io
-                     , cql
                      , text
                      , tinylog
                      , opaleye
