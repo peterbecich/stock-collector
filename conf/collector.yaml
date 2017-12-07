@@ -5,10 +5,10 @@ db:
   postgres:
     dbname: postgres
     user: postgres
-    ip: 127.0.0.1
-    port: 5433
+    ip: stock-postgres
+    port: 5432
   redis:
-    ip: 127.0.0.1
+    ip: stock-redis
     port: 6379
     
   

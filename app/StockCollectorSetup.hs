@@ -3,5 +3,6 @@ module Main where
 import SetupLib
 
 main :: IO ()
-main = setup
+main = undefined
+--main = setup
 

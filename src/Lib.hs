@@ -169,5 +169,6 @@ collectStockTicks = do
         ) stocks
 
   waitForChildren
-  
+
+  putStrLn "done"
   return ()
