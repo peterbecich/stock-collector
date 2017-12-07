@@ -13,12 +13,14 @@ import Data.Aeson
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.Int (Int64)
 import Data.List
+import Data.Either
 import Data.Functor
 import Data.Map (Map, empty, size, mapKeys, toList, elems, insert, assocs)
 import Data.Time.Clock
 import Data.Time.LocalTime
 import GHC.Generics
 import Network.HTTP.Simple
+import System.IO
 import System.IO.Unsafe (unsafePerformIO)
 import System.Random
 import qualified Data.ByteString as BS
@@ -59,25 +61,25 @@ retrieveStocks = do
   return stocks
 
 -- https://hackage.haskell.org/package/base-4.10.0.0/docs/Control-Concurrent.html#g:12
-children :: MVar [MVar ()]
-children = unsafePerformIO (newMVar [])
+-- children :: MVar [MVar ()]
+-- children = unsafePerformIO (newMVar [])
 
-waitForChildren :: IO ()
-waitForChildren = do
-  cs <- takeMVar children
-  case cs of
-    [] -> return ()
-    m:ms -> do
-      putMVar children ms
-      takeMVar m
-      waitForChildren
+-- waitForChildren :: IO ()
+-- waitForChildren = do
+--   cs <- takeMVar children
+--   case cs of
+--     [] -> return ()
+--     m:ms -> do
+--       putMVar children ms
+--       takeMVar m
+--       waitForChildren
 
-forkChild :: IO () -> IO ThreadId
-forkChild io = do
-  mvar <- newEmptyMVar
-  childs <- takeMVar children
-  putMVar children (mvar:childs)
-  forkFinally io (\_ -> putMVar mvar ())
+-- forkChild :: IO () -> IO ThreadId
+-- forkChild io = do
+--   mvar <- newEmptyMVar
+--   childs <- takeMVar children
+--   putMVar children (mvar:childs)
+--   forkFinally io (\_ -> putMVar mvar ())
 
 -- multiplier on delay between AlphaVantage queries
 multiplier :: Int
@@ -99,46 +101,27 @@ confPath = "/usr/local/etc/collector.yaml"
 --confPath = "conf/collector.yaml"
 
 -- given stock, hit AlphaVantage REST endpoint
-retrieveAlphaResponse :: Stock.Stock -> Request -> IO AlphaResponse
+-- https://hackage.haskell.org/package/http-conduit-2.2.4/docs/Network-HTTP-Simple.html
+retrieveAlphaResponse :: Stock.Stock -> Request -> IO (Maybe AlphaResponse)
 retrieveAlphaResponse stock requestURI = do
-  responseFAlphaResponse <- httpJSON requestURI :: IO (Response (Exchange -> Stock.Stock -> AlphaResponse))
+  responseFAlphaResponse <- httpJSONEither requestURI :: IO (Response (Either JSONException (Exchange -> Stock.Stock -> AlphaResponse)))
   let
-    fAlphaResponse :: (Exchange -> Stock.Stock -> AlphaResponse)
+    fAlphaResponse :: Either JSONException (Exchange -> Stock.Stock -> AlphaResponse)
     fAlphaResponse = getResponseBody responseFAlphaResponse
 
-    alphaResponse = fAlphaResponse (Stock.exchange stock) stock
+    exchange = Stock.exchange stock
 
-  return alphaResponse
+    mybe :: Maybe (Exchange -> Stock.Stock -> AlphaResponse)
+    mybe = either (\_ -> Nothing) (Just) fAlphaResponse
+    
+  return $ (\f -> f exchange stock) <$> mybe
+
+
 
 insertAlphaResponse :: PostgresPool -> AlphaResponse -> IO Int64
 insertAlphaResponse pool alphaResponse = do
   insertTicksSafe pool (ticks alphaResponse)
   
-  
-collectNStockTicks :: Int -> IO ()
-collectNStockTicks n = do
-  pool <- createPostgresPool confPath
-
-  stocks <- runQueryPool pool stockQuery :: IO [Stock.Stock]
-
-  let stocks' = take n stocks
-
-  putStrLn $ show (length stocks') ++ " stocks to retrieve ticks for"
-
-  mapM_ (\stock -> void $ forkChild $ do
-            -- randomDelay (length stocks')
-            request <- simpleFullRequest stock
-            -- putStrLn $ show request
-            alphaResponse <- retrieveAlphaResponse stock request
-            putStrLn $ "retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
-            rowsInserted <- insertAlphaResponse pool alphaResponse
-            putStrLn $ "inserted " ++ show rowsInserted ++ " rows"
-        ) stocks'
-
-  waitForChildren
-  
-  return ()
-
 collectStockTicks :: IO ()
 collectStockTicks = do
   threads <- getNumCapabilities
@@ -151,24 +134,26 @@ collectStockTicks = do
 
   putStrLn $ show (length stocks) ++ " stocks to retrieve ticks for"
 
-  mapM_ (\stock -> void $ forkChild $ do
-            -- randomDelay (length stocks)
+  -- no parallelism until throttling issue is solved
+  -- https://gist.github.com/roman/5578320
+  --void $ forkChild $ do
+  mapM_ (\stock -> do
+            putStrLn $ Stock.symbol stock
+            hPutStrLn stdout $ Stock.symbol stock
             request <- simpleFullRequest stock
-            alphaResponse <- retrieveAlphaResponse stock request
-            putStrLn $ (Stock.symbol stock) ++": retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
-            rowsInserted <- insertAlphaResponse psqlPool alphaResponse
-
-            putStrLn $ (Stock.symbol stock) ++ ": inserted " ++ show rowsInserted ++ " rows"
-            
-            let lastTick = getLastTick alphaResponse -- TODO improve
-
-            runRedisPool redisPool (setTickTimestamp lastTick)
-            putStrLn $ (Stock.symbol stock) ++ ": set latest timestamp " ++ show (Tick.time lastTick)
-            
-
+            malphaResponse <- retrieveAlphaResponse stock request
+            case malphaResponse of
+              Nothing -> return ()
+              (Just alphaResponse) -> do  
+                putStrLn $ (Stock.symbol stock) ++": retrieved " ++ show (length (ticks alphaResponse)) ++ " ticks"
+                rowsInserted <- insertAlphaResponse psqlPool alphaResponse
+                putStrLn $ (Stock.symbol stock) ++ ": inserted " ++ show rowsInserted ++ " rows"
+                let lastTick = getLastTick alphaResponse -- TODO improve
+                runRedisPool redisPool (setTickTimestamp lastTick)
+                putStrLn $ (Stock.symbol stock) ++ ": set latest timestamp " ++ show (Tick.time lastTick)
         ) stocks
 
-  waitForChildren
+  -- waitForChildren
 
   putStrLn "done"
   return ()

@@ -30,6 +30,7 @@ library
                      , aeson
                      , time
                      , http-conduit
+                     -- , http-client
                      , bytestring
                      , containers
                      , unordered-containers
