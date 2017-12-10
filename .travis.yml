@@ -11,10 +11,26 @@ cache:
 
 before_install:
   - docker pull fpco/stack-build:lts-9.17
-  - openssl aes-256-cbc -K $encrypted_67f787260264_key -iv $encrypted_67f787260264_iv -in scaleway_travis.enc -out scaleway_travis -d
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - git submodule update --init
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' stock-stats/.gitmodules
+  # - openssl aes-256-cbc -K $encrypted_67f787260264_key -iv $encrypted_67f787260264_iv -in scaleway_travis.enc -out scaleway_travis -d
+  # - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  # - git submodule update --init
+  # - sed -i 's/git@github.com:/https:\/\/github.com\//' stock-stats/.gitmodules
+  # - git submodule update --init --recursive
+
+  - eval "$(ssh-agent -s)" #start the ssh agent
+  
+  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_stats.enc -out travis_collector_stats -d
+  - chmod 600 travis_collector_stats
+  - ssh-add travis_collector_stats
+  
+  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_common.enc -out travis_collector_common -d
+  - chmod 600 travis_collector_common
+  - ssh-add travis_collector_common
+  
+  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_stats_common.enc -out travis_collector_stats_common -d
+  - chmod 600 travis_collector_stats_common
+  - ssh-add travis_collector_stats_common
+
   - git submodule update --init --recursive
   
   # Download and unpack the stack executable
@@ -28,16 +44,15 @@ script:
 
 addons:
   ssh_known_hosts:
-    - ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com
 
 # https://docs.travis-ci.com/user/deployment/custom/
 after_success:
-  - eval "$(ssh-agent -s)" #start the ssh agent
-  - chmod 600 scaleway_travis # this key should have push access
-  - ssh-add scaleway_travis
-  - git config --global receive.denyCurrentBranch ignore
-  - git remote add deploy git@ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com:/srv/stock-collector/.git
-  - git push deploy master
+  # - eval "$(ssh-agent -s)" #start the ssh agent
+  # - chmod 600 scaleway_travis # this key should have push access
+  # - ssh-add scaleway_travis
+  # - git config --global receive.denyCurrentBranch ignore
+  # - git remote add deploy git@ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com:/srv/stock-collector/.git
+  # - git push deploy master
 
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
