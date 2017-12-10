@@ -7,7 +7,8 @@ packages:
 - stock-common
 - stock-stats
 
-extra-deps: [yaml-config-0.4.0, stock-common-0.1.0.0, stock-stats-0.1.0.0]
+extra-deps:
+- yaml-config-0.4.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
