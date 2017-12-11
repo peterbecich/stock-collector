@@ -50,9 +50,9 @@ before_install:
   - stack setup
 
 script:
-  - echo "foobar"
-  # - stack build
-  # - stack image container
+  #- echo "foobar"
+  - stack build
+  - stack image container
 
 addons:
   ssh_known_hosts:
