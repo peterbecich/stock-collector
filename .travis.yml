@@ -49,8 +49,8 @@ before_install:
   - stack setup
 
 script:
-  - stack build
-  - stack image container
+  # - stack build
+  # - stack image container
 
 addons:
   ssh_known_hosts:
