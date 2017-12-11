@@ -6,7 +6,7 @@ services:
 # Caching so the next build will be fast too.
 cache:
   timeout: 600
-  bundler: true
+  bundler: false
   directories:
   - $HOME/.stack
   - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
@@ -50,9 +50,9 @@ before_install:
   - stack setup
 
 script:
-  # - echo "foobar"
-  - stack build
-  - stack image container
+  - echo "foobar"
+  # - stack build
+  # - stack image container
 
 addons:
   ssh_known_hosts:
