@@ -5,33 +5,42 @@ services:
 
 # Caching so the next build will be fast too.
 cache:
+  timeout: 600
+  bundler: true
   directories:
   - $HOME/.stack
-  - /var/lib/docker
-
-before_install:
-  - docker pull fpco/stack-build:lts-9.17
-  # - openssl aes-256-cbc -K $encrypted_67f787260264_key -iv $encrypted_67f787260264_iv -in scaleway_travis.enc -out scaleway_travis -d
-  # - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  # - git submodule update --init
-  # - sed -i 's/git@github.com:/https:\/\/github.com\//' stock-stats/.gitmodules
-  # - git submodule update --init --recursive
-
-  - eval "$(ssh-agent -s)" #start the ssh agent
+  - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
   
-  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_stats.enc -out travis_collector_stats -d
+before_install:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
+
+  # Load cached docker images
+  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
+
+
+  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_secrets.tar.enc -out travis_collector_secrets.tar -d
+  - tar xvf travis_collector_secrets.tar
+  
+  - eval "$(ssh-agent -s)" #start the ssh agent
+
+  - chmod 600 travis_collector
+  - ssh-add travis_collector
+
   - chmod 600 travis_collector_stats
   - ssh-add travis_collector_stats
   
-  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_common.enc -out travis_collector_common -d
   - chmod 600 travis_collector_common
   - ssh-add travis_collector_common
   
-  - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_stats_common.enc -out travis_collector_stats_common -d
   - chmod 600 travis_collector_stats_common
   - ssh-add travis_collector_stats_common
 
   - git submodule update --init --recursive
+
+  - docker pull fpco/stack-build:lts-9.17
   
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
@@ -41,20 +50,23 @@ before_install:
 
 script:
   - stack build
+  - stack image container
 
 addons:
   ssh_known_hosts:
 
 # https://docs.travis-ci.com/user/deployment/custom/
 after_success:
-  # - eval "$(ssh-agent -s)" #start the ssh agent
-  # - chmod 600 scaleway_travis # this key should have push access
-  # - ssh-add scaleway_travis
-  # - git config --global receive.denyCurrentBranch ignore
-  # - git remote add deploy git@ce3b12e3-5fee-4248-b3e4-24dfc4fc38c6.pub.cloud.scaleway.com:/srv/stock-collector/.git
-  # - git push deploy master
+  # - echo "success; run merge_script.sh"
+  # - ./scripts/merge_script.sh
 
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
   submodules: false
 
+before_cache:
+  # Save tagged docker images
+  - >
+    mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
+    | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
+  
