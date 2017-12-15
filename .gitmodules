@@ -1,8 +1,11 @@
 [submodule "stock-common"]
 	path = stock-common
 	url = git@github.com:peterbecich/stock-common.git
-	branch = master
+	branch = production
 [submodule "stock-stats"]
 	path = stock-stats
 	url = git@github.com:peterbecich/stock-stats.git
-	branch = master
+	branch = production
+[submodule "stock-ops"]
+	path = stock-ops
+	url = https://github.com/peterbecich/stock-ops.git

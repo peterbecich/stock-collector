@@ -9,19 +9,25 @@ cache:
   bundler: false
   directories:
   - $HOME/.stack
-  - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
+  - $HOME/docker
+  - /var/lib/docker
+  # https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
   - $HOME/build/peterbecich/stock-collector/.stack-work
   
 before_install:
+  - df -h
+  
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo apt-get update
   - sudo apt-get -y install docker-ce
 
   # Load cached docker images
-  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
+  # - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
 
 
+  - pwd
+  
   - openssl aes-256-cbc -K $encrypted_3cc09128f6f3_key -iv $encrypted_3cc09128f6f3_iv -in travis_collector_secrets.tar.enc -out travis_collector_secrets.tar -d
   - tar xvf travis_collector_secrets.tar
   
@@ -41,6 +47,9 @@ before_install:
 
   - git submodule update --init --recursive
 
+  - pwd
+  - ls
+
   - docker pull fpco/stack-build:lts-9.17
   
   # Download and unpack the stack executable
@@ -49,10 +58,18 @@ before_install:
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   - stack setup
 
+  - df -h
+  
 script:
-  #- echo "foobar"
+  - df -h
   - stack build
   - stack image container
+  - df -h
+  - echo "run merge.sh"  # This should not run if script fails earlier
+  # https://stackoverflow.com/a/43953433/1007926
+  - export GIT_SSH_COMMAND='ssh -i $HOME/build/peterbecich/stock-collector/travis_collector_push_github'
+  - ./stock-ops/travis/merge.sh
+  
 
 addons:
   ssh_known_hosts:
@@ -68,7 +85,7 @@ git:
 
 before_cache:
   # Save tagged docker images
-  - >
-    mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
-    | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
+  # - >
+  #   mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
+  #   | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
   
