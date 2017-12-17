@@ -64,14 +64,14 @@ before_install:
   
 script:
   - df -h
-  - echo "don't build just yet"
-  # - stack build
-  # - stack image container
-  # - df -h
-  # - echo "run merge.sh"  # This should not run if script fails earlier
-  # # https://stackoverflow.com/a/43953433/1007926
-  # - export GIT_SSH_COMMAND='ssh -i $HOME/build/peterbecich/stock-collector/travis_collector_push_github'
-  # - ./stock-ops/travis/merge.sh
+  # - echo "don't build just yet"
+  - stack build
+  - stack image container
+  - df -h
+  - echo "run merge.sh"  # This should not run if script fails earlier
+  # https://stackoverflow.com/a/43953433/1007926
+  - export GIT_SSH_COMMAND='ssh -i $HOME/build/peterbecich/stock-collector/travis_collector_push_github'
+  - ./stock-ops/travis/merge.sh
   
 
 addons:
