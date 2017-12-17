@@ -72,6 +72,7 @@ script:
   # https://stackoverflow.com/a/43953433/1007926
   - export GIT_SSH_COMMAND='ssh -i $HOME/build/peterbecich/stock-collector/travis_collector_push_github'
   - ./stock-ops/travis/merge.sh
+  - ./scripts/dockerhub.sh
   
 
 addons:
