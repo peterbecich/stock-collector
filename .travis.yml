@@ -66,8 +66,8 @@ script:
   - df -h
   # - echo "don't build just yet"
   # - stack build
-  - stack build --only-dependencies --fast
-  - stack build --fast
+  - stack build --only-dependencies --ghc-options=-O1
+  - stack build --ghc-options=-O1
   - stack image container
   - df -h
   - echo "run merge.sh"  # This should not run if script fails earlier
