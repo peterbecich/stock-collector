@@ -22,8 +22,8 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y install docker-ce
 
-  # Load cached docker images
-  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
+  # # Load cached docker images
+  # - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
 
   - pwd
 
@@ -80,14 +80,14 @@ addons:
   ssh_known_hosts:
 
 # https://docs.travis-ci.com/user/deployment/custom/
-# https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
+# https://gist.github.com/petrbel/c3bf7e0f59c22a52f534 
 git:
   submodules: false
 
 before_cache:
   # Save tagged docker images
-  - >
-    mkdir -p $HOME/docker && docker images "fpco/*" -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
-    | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
+  # - >
+  #   mkdir -p $HOME/docker && docker images "fpco/*" -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
+  #   | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
 
   
