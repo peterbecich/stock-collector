@@ -1,5 +1,6 @@
 
-resolver: lts-9.17
+resolver: lts-10.3
+# resolver: lts-9.17
 
 
 packages:
@@ -16,8 +17,8 @@ flags: {}
 # Extra package databases containing global packages
 extra-package-dbs: []
 
-ghc-options:
-  "*": -j -threaded
+# ghc-options:
+#   "*": -j -threaded
 
 docker:
   enable: true
@@ -25,7 +26,7 @@ docker:
 image:
   containers:
     -
-      base: "fpco/stack-build:lts-9.17"
+      base: "fpco/stack-build:lts-10.3"
       name: "peterbecich/stock-collector"
 
       add:
