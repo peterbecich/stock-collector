@@ -124,6 +124,9 @@ insertAlphaResponse pool alphaResponse = do
   
 collectStockTicks :: IO ()
 collectStockTicks = do
+  putStrLn "sleep for 30 seconds to allow stocks to be loaded into Postgres"
+  threadDelay 30000000
+  
   threads <- getNumCapabilities
   putStrLn $ show threads ++ " threads"
   
